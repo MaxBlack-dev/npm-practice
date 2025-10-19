@@ -3,6 +3,9 @@
 echo "🔧 Making index.js executable..."
 chmod +x index.js
 
+echo "🔧 Install required dependencies..."
+npm install
+
 echo "🔗 Linking package globally with npm..."
 npm link
 

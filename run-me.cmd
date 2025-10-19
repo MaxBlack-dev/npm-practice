@@ -1,6 +1,6 @@
 @echo off
-echo 🔧 Making index.js executable...
-REM Windows doesn't need chmod, so we skip it
+echo "🔧 Install required dependencies..."
+npm install
 
 echo 🔗 Linking package globally with npm...
 npm link

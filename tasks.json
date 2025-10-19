@@ -9,6 +9,7 @@
     "description": "Initialize a new npm project with default values.",
     "expectedCommand": "npm init -y",
     "checkCommand": "test -f package.json",
+    "windowsCheckCommand": "if exist package.json (exit 0) else (exit 1)",
     "explanation": "Creates a default package.json file to define your project and manage dependencies."
   },
   {
