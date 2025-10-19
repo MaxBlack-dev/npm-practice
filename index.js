@@ -63,7 +63,8 @@ function showTask(task) {
 }
 
 function validate(task) {
-  const command = task.checkCommand;
+  const isWindows = process.platform === 'win32';
+  const command = isWindows ? task.windowsCheckCommand : task.checkCommand;
 
   if (!command) {
     return true; // No system check needed
