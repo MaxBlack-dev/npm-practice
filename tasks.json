@@ -1,0 +1,176 @@
+[
+  {
+    "description": "Find out what commands and options npm provides.",
+    "expectedCommand": "npm help",
+    "outputIncludes": "Usage:",
+    "explanation": "Displays general help information about npm, including available commands and usage examples."
+  },
+  {
+    "description": "Initialize a new npm project with default values.",
+    "expectedCommand": "npm init -y",
+    "checkCommand": "test -f package.json",
+    "explanation": "Creates a default package.json file to define your project and manage dependencies."
+  },
+  {
+    "description": "Install the lodash package into your project.",
+    "expectedCommand": "npm install lodash",
+    "checkCommand": "npm list lodash | grep -q 'lodash'",
+    "explanation": "Installs the lodash package and adds it to your dependencies in package.json."
+  },
+  {
+    "description": "Install the axios package into your project.",
+    "expectedCommand": "npm install axios",
+    "checkCommand": "npm list axios | grep -q 'axios'",
+    "explanation": "Installs the axios package and adds it to your dependencies in package.json."
+  },
+  {
+    "description": "Uninstall the lodash package from your project.",
+    "expectedCommand": "npm uninstall lodash",
+    "checkCommand": "! npm list lodash | grep -q 'lodash'",
+    "explanation": "Removes the lodash package from node_modules and deletes it from package.json dependencies."
+  },
+  {
+    "description": "Bump the version of your project using npm. Try increasing it with a patch update.",
+    "expectedCommand": "npm version patch",
+    "checkCommand": "grep -q '\"version\": \"1.0.1\"' package.json",
+    "outputIncludes": "v1.0.1",
+    "explanation": "Increments the version field in package.json using semantic versioning (patch level)."
+  },
+  {
+    "description": "List installed packages in your project.",
+    "expectedCommand": "npm ls",
+    "outputIncludes": "axios",
+    "explanation": "Displays a tree of all installed packages and their dependencies."
+  },
+  {
+    "description": "Reinstall project dependencies cleanly using lockfile.",
+    "expectedCommand": "npm ci",
+    "checkCommand": "npm list axios | grep -q 'axios'",
+    "outputIncludes": "added",
+    "explanation": "Performs a clean install of dependencies based on package-lock.json, removing node_modules first."
+  },
+  {
+    "description": "Verify the integrity of the npm cache.",
+    "expectedCommand": "npm cache verify",
+    "outputIncludes": "verified",
+    "explanation": "Checks and cleans the npm cache to ensure it's valid and not corrupted."
+  },
+  {
+    "description": "Install the lodash package into node_modules without saving it to package.json.",
+    "expectedCommand": "npm install lodash --no-save",
+    "checkCommand": "test -d node_modules/lodash && ! grep -q 'lodash' package.json",
+    "explanation": "Installs lodash temporarily into node_modules without adding it to package.json dependencies."
+  },
+  {
+    "description": "List installed packages in your project.",
+    "expectedCommand": "npm ls",
+    "checkCommand": "npm ls | grep -q 'axios'",
+    "outputIncludes": "axios",
+    "explanation": "Displays a tree of all installed packages and their dependencies."
+  },
+  {
+    "description": "Remove extraneous packages from node_modules.",
+    "expectedCommand": "npm prune",
+    "checkCommand": "! test -d node_modules/lodash && test -d node_modules/axios",
+    "explanation": "Deletes packages from node_modules that are not listed in package.json."
+  },
+  {
+    "description": "List installed packages in your project.",
+    "expectedCommand": "npm ls",
+    "checkCommand": "npm ls | grep -q 'axios'",
+    "outputIncludes": "axios",
+    "explanation": "Displays a tree of all installed packages and their dependencies."
+  },
+  {
+    "description": "Deduplicate packages in your dependency tree.",
+    "expectedCommand": "npm dedupe",
+    "outputIncludes": "up to date",
+    "explanation": "Removes duplicate versions of packages by consolidating them where possible."
+  },
+  {
+    "description": "Install the chalk package version 4.1.1 into your project.",
+    "expectedCommand": "npm install chalk@4.1.1",
+    "checkCommand": "npm list chalk | grep -q 'chalk@4.1.1'",
+    "explanation": "Installs the chalk package version 4.1.1 and adds it to your dependencies in package.json."
+  },
+  {
+    "description": "Check for outdated packages in your project.",
+    "expectedCommand": "npm outdated",
+    "outputIncludes": "chalk",
+    "nonZeroOkay": true,
+    "explanation": "Shows which installed packages are outdated and what newer versions are available."
+  },
+  {
+    "description": "Update all outdated packages in your project.",
+    "expectedCommand": "npm update",
+    "checkCommand": "npm list chalk | grep -q 'chalk@' && ! npm list chalk | grep -q 'chalk@4.1.1'",
+    "outputIncludes": "changed",
+    "explanation": "Updates all dependencies in package.json to their latest compatible versions."
+  },
+  {
+    "description": "Inspect the installed version of chalk directly by listing only that package.",
+    "expectedCommand": "npm ls chalk",
+    "outputIncludes": "chalk",
+    "strictCommandMatch": true,
+    "explanation": "Displays the installed version of the chalk package to confirm it's present in your project."
+  },
+  {
+    "description": "Install the latest chalk package into your project.",
+    "expectedCommand": "npm install chalk@latest",
+    "checkCommand": "npm list chalk | grep -q 'chalk@' && ! npm list chalk | grep -q 'chalk@4.1.2'",
+    "explanation": "Installs the chalk package latest version and adds it to your dependencies in package.json."
+  },
+  {
+    "description": "Now check for outdated packages in your project.",
+    "expectedCommand": "npm outdated",
+    "outputIncludes": "",
+    "explanation": "Shows which installed packages are outdated and what newer versions are available."
+  },
+  {
+    "description": "View details about the axios package.",
+    "expectedCommand": "npm view axios",
+    "outputIncludes": "axios@",
+    "explanation": "Displays metadata about the axios package, such as version, description, and dependencies."
+  },
+  {
+    "description": "Show differences between chalk versions.",
+    "expectedCommand": "npm diff chalk",
+    "outputIncludes": "diff",
+    "explanation": "Displays file-level differences between installed packages and their latest versions."
+  },
+  {
+    "description": "Rebuild native modules in your project.",
+    "expectedCommand": "npm rebuild",
+    "checkCommand": "npm rebuild | grep -q 'rebuilt'",
+    "outputIncludes": "rebuilt",
+    "explanation": "Recompiles native add-ons in node_modules, useful after Node.js upgrades or environment changes."
+  },
+  {
+    "description": "Diagnose common environment problems.",
+    "expectedCommand": "npm doctor",
+    "checkCommand": "npm doctor | grep -q 'Check'",
+    "outputIncludes": "Check",
+    "explanation": "Runs a set of checks to identify potential issues in your npm and Node.js setup."
+  },
+  {
+    "description": "Lock down your dependencies using shrinkwrap.",
+    "expectedCommand": "npm shrinkwrap",
+    "checkCommand": "npm shrinkwrap && test -f npm-shrinkwrap.json",
+    "outputIncludes": "npm-shrinkwrap.json",
+    "explanation": "Generates a npm-shrinkwrap.json file to lock exact versions of dependencies for reproducible installs."
+  },
+  {
+    "description": "List your current npm configuration settings.",
+    "expectedCommand": "npm config list",
+    "checkCommand": "npm config list | grep -q 'userconfig'",
+    "outputIncludes": "userconfig",
+    "explanation": "Displays all current npm configuration values, including user-level and global settings."
+  },
+  {
+    "description": "Run a security audit on your dependencies.",
+    "expectedCommand": "npm audit",
+    "checkCommand": "npm audit || echo 'no vulnerabilities'",
+    "outputIncludes": "vulnerabilities",
+    "explanation": "Scans your project for known security vulnerabilities in installed packages."
+  }
+]
