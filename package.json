@@ -1,6 +1,6 @@
 {
-  "name": "npm-practice",
-  "version": "1.0.0",
+  "name": "@max-black/npm-practice",
+  "version": "0.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
