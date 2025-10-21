@@ -1,8 +1,9 @@
 # 📦 NPM Practice CLI
 
-Welcome to the interactive CLI tutor for learning real-world npm workflows! 
-This tool guides you through hands-on tasks like creating folders, initializing packages, 
-and installing dependencies — all from your terminal.
+This interactive CLI tutor is designed as hands-on practice for readers of
+the [NPM Book by Max Black](https://www.amazon.com/dp/B0FSX9TZZ1). If you're working through the book, this tool will
+guide you through real-world npm workflows — from initializing packages to installing dependencies — all from your
+terminal.
 
 ---
 
@@ -11,23 +12,26 @@ and installing dependencies — all from your terminal.
 ### ✅ Linux / macOS
 
 1. Open your terminal and navigate to the project folder.
-2. Run the setup script:
+2. Make fine executable:
+
+   ```bash
+   chmod +x run-me.sh
+   ```
+
+3. Run the setup script:
 
    ```bash
    ./run-me.sh
    ```
 
-If you get a permission error, run:
+4. Once setup is complete, start the CLI tutor:
 
    ```bash
-    chmod +x run-me.sh
-    ./run-me.sh
+   npm-practice
    ```
 
-Once setup is complete, start the CLI tutor:
-npm-practice
-
 ### ✅ Windows
+
 1. Open the project folder in File Explorer.
 2. Double-click run-me.cmd to run the setup.
 3. Open Command Prompt and start the CLI tutor:
