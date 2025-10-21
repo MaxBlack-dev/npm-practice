@@ -15,6 +15,7 @@ and installing dependencies — all from your terminal.
 
    ```bash
    ./run-me.sh
+   ```
 
 If you get a permission error, run:
 
