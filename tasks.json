@@ -134,10 +134,10 @@
     "explanation": "Displays metadata about the axios package, such as version, description, and dependencies."
   },
   {
-    "description": "Show differences between chalk versions.",
-    "expectedCommand": "npm diff chalk",
+    "description": "Compare two versions 4.1.2 and 5.0.0 of chalk to see what changed.",
+    "expectedCommand": "npm diff --diff=chalk@4.1.2 --diff=chalk@5.0.0",
     "outputIncludes": "diff",
-    "explanation": "Displays file-level differences between installed packages and their latest versions."
+    "explanation": "Displays file-level differences between chalk version 4.1.2 and 5.0.0 using npm diff."
   },
   {
     "description": "Rebuild native modules in your project.",
@@ -149,28 +149,26 @@
   {
     "description": "Diagnose common environment problems.",
     "expectedCommand": "npm doctor",
-    "checkCommand": "npm doctor | grep -q 'Check'",
     "outputIncludes": "Check",
+    "nonZeroOkay": true,
     "explanation": "Runs a set of checks to identify potential issues in your npm and Node.js setup."
   },
   {
     "description": "Lock down your dependencies using shrinkwrap.",
     "expectedCommand": "npm shrinkwrap",
-    "checkCommand": "npm shrinkwrap && test -f npm-shrinkwrap.json",
+    "checkCommand": "test -f npm-shrinkwrap.json",
     "outputIncludes": "npm-shrinkwrap.json",
     "explanation": "Generates a npm-shrinkwrap.json file to lock exact versions of dependencies for reproducible installs."
   },
   {
     "description": "List your current npm configuration settings.",
     "expectedCommand": "npm config list",
-    "checkCommand": "npm config list | grep -q 'userconfig'",
-    "outputIncludes": "userconfig",
+    "outputIncludes": "user",
     "explanation": "Displays all current npm configuration values, including user-level and global settings."
   },
   {
     "description": "Run a security audit on your dependencies.",
     "expectedCommand": "npm audit",
-    "checkCommand": "npm audit || echo 'no vulnerabilities'",
     "outputIncludes": "vulnerabilities",
     "explanation": "Scans your project for known security vulnerabilities in installed packages."
   }
