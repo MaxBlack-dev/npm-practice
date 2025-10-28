@@ -24,11 +24,13 @@ process.chdir(projectFolder);
 console.log(chalk.green(`📂 Working inside: ${process.cwd()}`));
 
 // Load progress if it exists
+let showCount = 0;
 if (fs.existsSync(progressFile)) {
   try {
     const saved = JSON.parse(fs.readFileSync(progressFile, 'utf8'));
     if (typeof saved.currentTaskIndex === 'number' && saved.currentTaskIndex < tasks.length) {
       currentTaskIndex = saved.currentTaskIndex;
+      showCount = saved.showCount || 0;
       console.log(chalk.blue(`🔄 Resuming from Task ${currentTaskIndex + 1}`));
     }
   } catch (e) {
@@ -54,7 +56,7 @@ const rl = readline.createInterface({
 });
 
 function saveProgress() {
-  fs.writeFileSync(progressFile, JSON.stringify({ currentTaskIndex }), 'utf8');
+  fs.writeFileSync(progressFile, JSON.stringify({ currentTaskIndex, showCount }), 'utf8');
 }
 
 function showTask(task) {
@@ -140,6 +142,7 @@ function handleInput(input) {
       }
 
       currentTaskIndex = 0;
+      showCount = 0;
       console.log(chalk.blue("\n🔄 All data cleared. Starting from the beginning..."));
       showTask(tasks[currentTaskIndex]);
     } catch (e) {
@@ -150,6 +153,8 @@ function handleInput(input) {
   }
 
   if (lower === 'show') {
+    showCount++;
+    saveProgress();
     console.log(chalk.cyan(`💡 The correct command is: ${chalk.bold(task.expectedCommand)}`));
     console.log(chalk.yellow("Now try running it below:"));
     printMessages();
@@ -332,7 +337,11 @@ function retryPrompt() {
 
 function printMessages() {
   console.log(chalk.yellow("Type your command below and press Enter."));
-  console.log(chalk.gray("💡 Type 'show' to reveal the correct command."));
+  let showHint = "💡 Type 'show' to reveal the correct command.";
+  if (showCount > 0) {
+    showHint += ` (used ${showCount} time${showCount > 1 ? 's' : ''})`;
+  }
+  console.log(chalk.gray(showHint));
   console.log(chalk.gray("💡 Type 'explain' to learn what the current command does and why it's useful."));
   console.log(chalk.gray("💡 Type 'exit' anytime to quit."));
   console.log(chalk.gray("💡 Type 'reset' to clear all progress and start fresh."));
