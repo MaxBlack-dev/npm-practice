@@ -300,6 +300,16 @@ function handleInput(input) {
           (!isOutputBased && stateValid);
 
       if (passed) {
+        if (task.afterCommand) {
+          try {
+            console.log(chalk.gray(`🧹 Cleaning up with: ${task.afterCommand}`));
+            execSync(task.afterCommand, { stdio: 'ignore', shell: true });
+            console.log(chalk.gray("🧼 Cleanup completed."));
+          } catch (e) {
+            console.log(chalk.red(`⚠️ Failed to run afterCommand: ${e.message}`));
+          }
+        }
+
         console.log(chalk.green("✅ Task completed successfully."));
         currentTaskIndex++;
         saveProgress();

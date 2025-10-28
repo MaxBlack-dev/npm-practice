@@ -221,6 +221,7 @@
     "expectedCommand": "npm shrinkwrap",
     "checkCommand": "test -f npm-shrinkwrap.json",
     "outputIncludes": "npm-shrinkwrap.json",
+    "afterCommand": "rm npm-shrinkwrap.json",
     "explanation": "Generates a npm-shrinkwrap.json file to lock exact versions of dependencies for reproducible installs."
   },
   {
@@ -232,8 +233,23 @@
   {
     "description": "Run a security audit on your dependencies.",
     "expectedCommand": "npm audit",
-    "outputIncludes": "vulnerabilities",
+    "beforeCommand": "npm init -y && npm install lodash@4.17.11",
+    "checkCommand": "npm audit | grep -q '1 critical severity vulnerability'",
     "explanation": "Scans your project for known security vulnerabilities in installed packages."
+  },
+  {
+    "description": "Fix the vulnerability using npm's automated tool.",
+    "expectedCommand": "npm audit fix",
+    "checkCommand": "! npm audit | grep -q '1 critical severity vulnerability'",
+    "outputIncludes": "found 0 vulnerabilities",
+    "explanation": "Runs npm's built-in fix tool to resolve known vulnerabilities automatically."
+  },
+  {
+    "description": "Confirm that your project is now free of vulnerabilities.",
+    "expectedCommand": "npm audit",
+    "checkCommand": "npm audit | grep -q 'found 0 vulnerabilities'",
+    "outputIncludes": "0 vulnerabilities",
+    "explanation": "Verifies that your dependency tree is now secure."
   },
   {
     "description": "Generate a software bill of materials for your project in SPDX format.",
@@ -242,34 +258,50 @@
     "explanation": "Creates a standardized SPDX report listing all dependencies and licenses in your project."
   },
   {
-    "description": "Find duplicate packages in your dependency tree.",
-    "expectedCommand": "npm find-dupes",
-    "outputIncludes": "Duplicate",
-    "explanation": "Identifies multiple versions of the same package to help reduce bloat and improve consistency."
-  },
-  {
     "description": "Check which dependencies are seeking funding.",
     "expectedCommand": "npm fund",
-    "outputIncludes": "Funding",
+    "outputIncludes": "https://github.com/sponsors",
     "explanation": "Shows which packages support open-source funding and how to contribute."
   },
   {
     "description": "Create a tarball of your package for publishing.",
     "expectedCommand": "npm pack",
+    "checkCommand": "ls my-npm-project-*.tgz | grep -q '.tgz'",
     "outputIncludes": ".tgz",
+    "afterCommand": "rm my-npm-project-*.tgz",
     "explanation": "Generates a compressed archive of your package, simulating what would be published to npm."
   },
   {
-    "description": "Publish your package to the npm registry.",
-    "expectedCommand": "npm publish",
-    "outputIncludes": "published",
-    "explanation": "Uploads your package to npm, making it available to others. Requires a valid account and version bump."
+    "description": "Simulate publishing your package to the npm registry.",
+    "expectedCommand": "npm publish --dry-run",
+    "outputIncludes": "npm notice",
+    "explanation": "Shows what would be published to npm without actually uploading anything. Useful for verifying your package contents."
   },
   {
     "description": "Symlink your local package for development.",
     "expectedCommand": "npm link",
-    "outputIncludes": "linked",
+    "outputIncludes": "added",
     "explanation": "Creates a global symlink to your package, useful for testing CLI tools or shared modules."
+  },
+  {
+    "description": "Verify that your package is now globally linked.",
+    "expectedCommand": "npm ls -g",
+    "checkCommand": "npm ls -g | grep -q 'my-npm-project@'",
+    "outputIncludes": "my-npm-project@",
+    "explanation": "Checks the global npm registry to confirm your package is linked and available for use."
+  },
+  {
+    "description": "Remove the global symlink to your package.",
+    "expectedCommand": "npm unlink -g my-npm-project",
+    "outputIncludes": "removed",
+    "explanation": "Unlinks your package from the global registry, cleaning up your development environment."
+  },
+  {
+    "description": "Verify that your package is no longer globally linked.",
+    "expectedCommand": "npm ls -g",
+    "checkCommand": "! npm ls -g | grep -q 'my-npm-project@'",
+    "outputIncludes": "",
+    "explanation": "Ensures your package has been successfully unlinked from the global npm registry."
   },
   {
     "description": "Log in to your npm account.",
