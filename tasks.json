@@ -45,14 +45,19 @@
   },
   {
     "description": "Reinstall project dependencies cleanly using lockfile.",
+    "beforeCommand": "rm -rf node_modules",
+    "preCheckCommand": "test ! -d node_modules",
     "expectedCommand": "npm ci",
-    "checkCommand": "npm list axios | grep -q 'axios'",
+    "checkCommand": "npm list axios | grep -q 'axios' && test -d node_modules",
     "outputIncludes": "added",
     "explanation": "Performs a clean install of dependencies based on package-lock.json, removing node_modules first."
   },
   {
     "description": "Verify the integrity of the npm cache.",
+    "beforeCommand": "mkdir -p ~/.npm/_cacache/tmp && touch ~/.npm/_cacache/tmp/fake.tar.gz",
+    "preCheckCommand": "test -f ~/.npm/_cacache/tmp/fake.tar.gz",
     "expectedCommand": "npm cache verify",
+    "checkCommand": "test ! -f ~/.npm/_cacache/tmp/fake.tar.gz",
     "outputIncludes": "verified",
     "explanation": "Checks and cleans the npm cache to ensure it's valid and not corrupted."
   },
@@ -83,10 +88,42 @@
     "explanation": "Displays a tree of all installed packages and their dependencies."
   },
   {
-    "description": "Deduplicate packages in your dependency tree.",
+    "description": "Install express version 5.1.0 and body-parser version 2.2.0 to create a duplicate dependency scenario.",
+    "expectedCommand": "npm install express@5.1.0 body-parser@2.2.0",
+    "outputIncludes": "added",
+    "checkCommand": "npm ls statuses | grep -q 'statuses@'",
+    "explanation": "Installs two packages that depend on different versions of 'statuses', creating a duplicate in the tree."
+  },
+  {
+    "description": "Inspect the dependency tree for the 'statuses' package.",
+    "expectedCommand": "npm ls statuses",
+    "outputIncludes": "statuses@",
+    "explanation": "Shows how multiple versions of 'statuses' are nested under different packages."
+  },
+  {
+    "description": "Detect duplicate versions of packages in your dependency tree.",
+    "expectedCommand": "npm find-dupes",
+    "outputIncludes": "statuses",
+    "explanation": "Reports multiple versions of 'statuses' and suggests deduplication."
+  },
+  {
+    "description": "Deduplicate your dependency tree to flatten duplicate packages.",
     "expectedCommand": "npm dedupe",
+    "outputIncludes": "removed",
+    "checkCommand": "npm ls statuses | grep -v 'node_modules/body-parser/node_modules/statuses'",
+    "explanation": "Attempts to flatten the dependency tree by hoisting shared packages like 'statuses'."
+  },
+  {
+    "description": "Recheck the dependency tree for 'statuses' after deduplication.",
+    "expectedCommand": "npm ls statuses",
+    "outputIncludes": "statuses@",
+    "explanation": "Verifies that 'statuses' has been hoisted and duplicates removed."
+  },
+  {
+    "description": "Run 'npm find-dupes' again to confirm duplicates are gone.",
+    "expectedCommand": "npm find-dupes",
     "outputIncludes": "up to date",
-    "explanation": "Removes duplicate versions of packages by consolidating them where possible."
+    "explanation": "Confirms that the dependency tree is now clean and deduplicated."
   },
   {
     "description": "Install the chalk package version 4.1.1 into your project.",
@@ -118,7 +155,7 @@
   {
     "description": "Install the latest chalk package into your project.",
     "expectedCommand": "npm install chalk@latest",
-    "checkCommand": "npm list chalk | grep -q 'chalk@' && ! npm list chalk | grep -q 'chalk@4.1.2'",
+    "checkCommand": "npm list chalk | grep -q 'chalk@' && ! npm list chalk | grep -q 'chalk@4.1.2' && test $(npm outdated | wc -l) -eq 0",
     "explanation": "Installs the chalk package latest version and adds it to your dependencies in package.json."
   },
   {
@@ -140,18 +177,44 @@
     "explanation": "Displays file-level differences between chalk version 4.1.2 and 5.0.0 using npm diff."
   },
   {
-    "description": "Rebuild native modules in your project.",
+    "description": "Install the native module 'sqlite3' to prepare for a rebuild scenario.",
+    "expectedCommand": "npm install sqlite3",
+    "outputIncludes": "added",
+    "checkCommand": "test -d node_modules/sqlite3",
+    "explanation": "Installs a native Node.js module that compiles binary bindings during install. We'll simulate a broken build next."
+  },
+  {
+    "description": "Rebuild the native module 'sqlite3' after simulating a broken build.",
     "expectedCommand": "npm rebuild",
-    "checkCommand": "npm rebuild | grep -q 'rebuilt'",
-    "outputIncludes": "rebuilt",
-    "explanation": "Recompiles native add-ons in node_modules, useful after Node.js upgrades or environment changes."
+    "beforeCommand": "rm -rf node_modules/sqlite3/build/Release",
+    "preCheckCommand": "test ! -f node_modules/sqlite3/build/Release/*.node",
+    "checkCommand": "test -f node_modules/sqlite3/build/Release/*.node",
+    "outputIncludes": "rebuilt dependencies successfully",
+    "explanation": "Recompiles native bindings for 'sqlite3', restoring the missing binary after we deleted it."
   },
   {
     "description": "Diagnose common environment problems.",
     "expectedCommand": "npm doctor",
+    "beforeCommand": "npm install -g npm@10.2.0",
+    "preCheckCommand": "npm -v | grep -q '^10\\.'",
     "outputIncludes": "Check",
     "nonZeroOkay": true,
     "explanation": "Runs a set of checks to identify potential issues in your npm and Node.js setup."
+  },
+  {
+    "description": "Upgrade npm to the latest version to resolve the issue.",
+    "expectedCommand": "npm install -g npm@latest",
+    "checkCommand": "! npm -v | grep -q '^10\\.'",
+    "outputIncludes": "changed",
+    "explanation": "Upgrades npm to the latest version so that npm doctor no longer reports it as outdated."
+  },
+  {
+    "description": "Run npm doctor again to confirm the issue is resolved.",
+    "expectedCommand": "npm doctor",
+    "checkCommand": "npm doctor | awk '/Checking npm version/{getline; print}' | grep -q '^Ok$'",
+    "outputIncludes": "Checking npm version",
+    "nonZeroOkay": true,
+    "explanation": "Verifies that npm doctor no longer reports the outdated npm version."
   },
   {
     "description": "Lock down your dependencies using shrinkwrap.",
@@ -171,5 +234,71 @@
     "expectedCommand": "npm audit",
     "outputIncludes": "vulnerabilities",
     "explanation": "Scans your project for known security vulnerabilities in installed packages."
+  },
+  {
+    "description": "Generate a software bill of materials for your project in SPDX format.",
+    "expectedCommand": "npm sbom --sbom-format=spdx",
+    "outputIncludes": "SPDX",
+    "explanation": "Creates a standardized SPDX report listing all dependencies and licenses in your project."
+  },
+  {
+    "description": "Find duplicate packages in your dependency tree.",
+    "expectedCommand": "npm find-dupes",
+    "outputIncludes": "Duplicate",
+    "explanation": "Identifies multiple versions of the same package to help reduce bloat and improve consistency."
+  },
+  {
+    "description": "Check which dependencies are seeking funding.",
+    "expectedCommand": "npm fund",
+    "outputIncludes": "Funding",
+    "explanation": "Shows which packages support open-source funding and how to contribute."
+  },
+  {
+    "description": "Create a tarball of your package for publishing.",
+    "expectedCommand": "npm pack",
+    "outputIncludes": ".tgz",
+    "explanation": "Generates a compressed archive of your package, simulating what would be published to npm."
+  },
+  {
+    "description": "Publish your package to the npm registry.",
+    "expectedCommand": "npm publish",
+    "outputIncludes": "published",
+    "explanation": "Uploads your package to npm, making it available to others. Requires a valid account and version bump."
+  },
+  {
+    "description": "Symlink your local package for development.",
+    "expectedCommand": "npm link",
+    "outputIncludes": "linked",
+    "explanation": "Creates a global symlink to your package, useful for testing CLI tools or shared modules."
+  },
+  {
+    "description": "Log in to your npm account.",
+    "expectedCommand": "npm login",
+    "outputIncludes": "Logged in",
+    "explanation": "Authenticates your npm account so you can publish, install private packages, or manage your profile."
+  },
+  {
+    "description": "Check which npm user is currently logged in.",
+    "expectedCommand": "npm whoami",
+    "outputIncludes": "",
+    "explanation": "Displays the username of the currently authenticated npm account."
+  },
+  {
+    "description": "Log out of your npm account.",
+    "expectedCommand": "npm logout",
+    "outputIncludes": "Logged out",
+    "explanation": "Removes your authentication token and ends your npm session."
+  },
+  {
+    "description": "Create a new npm user account.",
+    "expectedCommand": "npm adduser",
+    "outputIncludes": "added user",
+    "explanation": "Registers a new npm account or adds credentials to your local config."
+  },
+  {
+    "description": "Remove a published package from the npm registry.",
+    "expectedCommand": "npm unpublish",
+    "outputIncludes": "unpublished",
+    "explanation": "Deletes a package or version from npm. Use with caution — it affects all downstream users."
   }
 ]

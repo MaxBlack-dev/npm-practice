@@ -9,6 +9,7 @@ const chalk = require('chalk');
 const tasks = require('./tasks.json');
 const progressFile = path.join(__dirname, 'progress.json');
 let currentTaskIndex = 0;
+let preCheckCompleted = false;
 
 const projectFolder = path.join(process.cwd(), 'my-npm-project');
 
@@ -58,8 +59,37 @@ function saveProgress() {
 
 function showTask(task) {
   console.log(chalk.green.bold(`\n🧠 Task ${currentTaskIndex + 1}/${tasks.length}: ${task.description}`));
-  printMessages();
-  rl.prompt();
+
+  // Run beforeCommand if defined
+  if (task.beforeCommand) {
+    try {
+      console.log(chalk.gray(`⚙️ Preparing environment: ${task.beforeCommand}`));
+      execSync(task.beforeCommand, { stdio: 'ignore', shell: true });
+    } catch (e) {
+      console.log(chalk.red(`❌ Failed to run beforeCommand: ${e.message}`));
+    }
+  }
+
+  // Run preCheckCommand if defined
+  if (task.preCheckCommand) {
+    try {
+      execSync(task.preCheckCommand, { stdio: 'ignore', shell: true });
+      preCheckCompleted = true;
+    } catch (e) {
+      console.log(chalk.red(`❌ Pre-check failed: ${e.message}`));
+      preCheckCompleted = false;
+    }
+  } else {
+    preCheckCompleted = true;
+  }
+
+  if (preCheckCompleted) {
+    printMessages();
+    rl.prompt();
+  } else {
+    console.log(chalk.red("⚠️ Environment not ready. Fix the issue and type 'retry' to recheck."));
+    rl.question('> ', handleInput);
+  }
 }
 
 function validate(task) {
@@ -135,13 +165,12 @@ function handleInput(input) {
       console.log(chalk.gray(`▶ Running: ${cmd}`));
       execSync(cmd, { stdio: 'inherit', shell: true });
     } catch (e) {
-      const task = tasks[i];
       const nonZeroOkay = task.nonZeroOkay === true;
 
       if (nonZeroOkay) {
-        console.log(chalk.gray(`ℹ️ Task ${i + 1} exited with code ${e.status}, but that's expected.`));
+        console.log(chalk.gray(`ℹ️ Task ${currentTaskIndex + 1} exited with code ${e.status}, but that's expected.`));
       } else {
-        console.log(chalk.red(`⚠️ Skipped Task ${i + 1} due to error: ${e.message}`));
+        console.log(chalk.red(`⚠️ Skipped Task ${currentTaskIndex + 1} due to error: ${e.message}`));
       }
     }
 
