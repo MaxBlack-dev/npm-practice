@@ -89,7 +89,7 @@ function showTask(task) {
     printMessages();
     rl.prompt();
   } else {
-    console.log(chalk.red("⚠️ Environment not ready. Fix the issue and type 'retry' to recheck."));
+    console.log(chalk.red("⚠️ Environment not ready. Fix the issue and try again."));
     rl.question('> ', handleInput);
   }
 }
@@ -272,6 +272,49 @@ function handleInput(input) {
     saveProgress();
     showTask(tasks[currentTaskIndex]);
     return;
+  }
+
+  if (trimmed === 'npm login' || trimmed === 'npm adduser') {
+    rl.pause(); // ⏸️ Stop intercepting input
+
+    const { spawn } = require('child_process');
+    const login = spawn('npm', ['login'], { stdio: 'inherit', shell: true });
+
+    login.on('exit', (code) => {
+      rl.resume(); // ▶️ Resume input after login completes
+
+      const task = tasks[currentTaskIndex];
+      const stateValid = task.checkCommand ? validate(task) : true;
+      const passed = stateValid;
+
+      if (passed) {
+        if (task.afterCommand) {
+          try {
+            console.log(chalk.gray(`🧹 Cleaning up with: ${task.afterCommand}`));
+            execSync(task.afterCommand, { stdio: 'ignore', shell: true });
+            console.log(chalk.gray("🧼 Cleanup completed."));
+          } catch (e) {
+            console.log(chalk.red(`⚠️ Failed to run afterCommand: ${e.message}`));
+          }
+        }
+
+        console.log(chalk.green("✅ Task completed successfully."));
+        currentTaskIndex++;
+        saveProgress();
+        if (currentTaskIndex < tasks.length) {
+          showTask(tasks[currentTaskIndex]);
+        } else {
+          console.log(chalk.green.bold("\n🎉 Congratulations! You've completed all tasks."));
+          fs.unlinkSync(progressFile);
+          rl.close();
+        }
+      } else {
+        console.log(chalk.red("❌ Task failed. Try again or type 'show' for help."));
+        retryPrompt();
+      }
+    });
+
+    return; // ⛔ Prevent fallback logic from running
   }
 
   exec(trimmed, { shell: true }, (err, stdout, stderr) => {

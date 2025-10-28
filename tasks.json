@@ -227,7 +227,7 @@
   {
     "description": "List your current npm configuration settings.",
     "expectedCommand": "npm config list",
-    "outputIncludes": "user",
+    "outputIncludes": "HOME",
     "explanation": "Displays all current npm configuration values, including user-level and global settings."
   },
   {
@@ -272,12 +272,6 @@
     "explanation": "Generates a compressed archive of your package, simulating what would be published to npm."
   },
   {
-    "description": "Simulate publishing your package to the npm registry.",
-    "expectedCommand": "npm publish --dry-run",
-    "outputIncludes": "npm notice",
-    "explanation": "Shows what would be published to npm without actually uploading anything. Useful for verifying your package contents."
-  },
-  {
     "description": "Symlink your local package for development.",
     "expectedCommand": "npm link",
     "outputIncludes": "added",
@@ -318,19 +312,74 @@
   {
     "description": "Log out of your npm account.",
     "expectedCommand": "npm logout",
-    "outputIncludes": "Logged out",
+    "checkCommand": "npm logout 2>&1 | grep -q 'ENEEDAUTH'",
     "explanation": "Removes your authentication token and ends your npm session."
   },
   {
-    "description": "Create a new npm user account.",
-    "expectedCommand": "npm adduser",
-    "outputIncludes": "added user",
-    "explanation": "Registers a new npm account or adds credentials to your local config."
+    "description": "Install Verdaccio globally to create a local npm registry.",
+    "expectedCommand": "npm install -g verdaccio",
+    "checkCommand": "verdaccio --version",
+    "outputIncludes": "",
+    "explanation": "Verdaccio is a lightweight local npm registry. Installing it lets you publish and test packages privately."
   },
   {
-    "description": "Remove a published package from the npm registry.",
-    "expectedCommand": "npm unpublish",
-    "outputIncludes": "unpublished",
-    "explanation": "Deletes a package or version from npm. Use with caution — it affects all downstream users."
+    "description": "Point npm to your local registry at http://localhost:4873.",
+    "expectedCommand": "npm set registry http://localhost:4873",
+    "checkCommand": "npm config get registry | grep -q 'localhost:4873'",
+    "outputIncludes": "",
+    "explanation": "This tells npm to use your local registry instead of the public one."
+  },
+  {
+    "description": "Create a local npm user for Verdaccio.",
+    "expectedCommand": "npm adduser",
+    "beforeCommand": "nohup verdaccio > verdaccio.log 2>&1 &",
+    "checkCommand": "npm whoami --registry http://localhost:4873 | grep -q '.'",
+    "outputIncludes": "Logged in",
+    "explanation": "Authenticates you with your local registry so you can publish packages. We start Verdaccio in the background if it's not already running."
+  },
+  {
+    "description": "Publish your package to the local registry.",
+    "expectedCommand": "npm publish",
+    "preCheckCommand": "curl -s http://localhost:4873 | grep -q 'Verdaccio'",
+    "beforeCommand": "nohup verdaccio > verdaccio.log 2>&1 &",
+    "checkCommand": "npm view my-npm-project --registry http://localhost:4873 | grep -q 'version'",
+    "outputIncludes": "my-npm-project",
+    "explanation": "Publishes your package to the local registry. We ensure Verdaccio is running before publishing."
+  },
+  {
+    "description": "Install your package from the local registry.",
+    "expectedCommand": "npm install my-npm-project",
+    "checkCommand": "ls node_modules | grep -q 'my-npm-project'",
+    "outputIncludes": "added",
+    "explanation": "Installs your package from the local registry."
+  },
+  {
+    "description": "Remove your my-npm-project package from current project.",
+    "expectedCommand": "npm uninstall my-npm-project",
+    "checkCommand": "! ls node_modules | grep -q 'my-npm-project'",
+    "outputIncludes": "removed",
+    "explanation": "Removes your package from the current project."
+  },
+  {
+    "description": "Unpublish your package from the local registry.",
+    "expectedCommand": "npm unpublish --force",
+    "checkCommand": "! npm view my-npm-project --registry http://localhost:4873 | grep -q 'version'",
+    "afterCommand": "lsof -ti :4873 | xargs kill",
+    "outputIncludes": "",
+    "explanation": "Removes your package from the local registry. Safe to test without affecting public npm."
+  },
+  {
+    "description": "Uninstall Verdaccio from your system.",
+    "expectedCommand": "npm uninstall -g verdaccio",
+    "checkCommand": "! command -v verdaccio",
+    "outputIncludes": "",
+    "explanation": "Removes the Verdaccio CLI from your global environment. This step is optional if you want to keep using it later."
+  },
+  {
+    "description": "Reset your npm registry to the official public registry.",
+    "expectedCommand": "npm set registry https://registry.npmjs.org/",
+    "checkCommand": "npm config get registry | grep -q 'registry.npmjs.org'",
+    "outputIncludes": "",
+    "explanation": "Restores your npm configuration to use the official public registry. This ensures future installs and publishes go to npmjs.com."
   }
 ]
