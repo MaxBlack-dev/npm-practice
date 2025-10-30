@@ -231,10 +231,16 @@
     "explanation": "Displays all current npm configuration values, including user-level and global settings."
   },
   {
+    "description": "Install lodash version 4.17.11 which has known vulnerabilities.",
+    "expectedCommand": "npm install lodash@4.17.11",
+    "checkCommand": "npm list lodash | grep -q 'lodash@4.17.11'",
+    "explanation": "Installs an older version of lodash that is known to have security issues for testing npm audit."
+  },
+  {
     "description": "Run a security audit on your dependencies.",
     "expectedCommand": "npm audit",
-    "beforeCommand": "npm init -y && npm install lodash@4.17.11",
-    "checkCommand": "npm audit | grep -q '1 critical severity vulnerability'",
+    "outputIncludes": "1 critical severity vulnerability",
+    "nonZeroOkay": true,
     "explanation": "Scans your project for known security vulnerabilities in installed packages."
   },
   {
@@ -247,7 +253,6 @@
   {
     "description": "Confirm that your project is now free of vulnerabilities.",
     "expectedCommand": "npm audit",
-    "checkCommand": "npm audit | grep -q 'found 0 vulnerabilities'",
     "outputIncludes": "0 vulnerabilities",
     "explanation": "Verifies that your dependency tree is now secure."
   },
@@ -301,6 +306,7 @@
     "description": "Log in to your npm account.",
     "expectedCommand": "npm login",
     "outputIncludes": "Logged in",
+    "requiresUserInput": true,
     "explanation": "Authenticates your npm account so you can publish, install private packages, or manage your profile."
   },
   {
@@ -330,11 +336,18 @@
     "explanation": "This tells npm to use your local registry instead of the public one."
   },
   {
+    "description": "Validate that previous change has been applied successfully.",
+    "expectedCommand": "npm get registry",
+    "outputIncludes": "localhost:4873",
+    "explanation": "This tells npm to use your local registry instead of the public one."
+  },
+  {
     "description": "Create a local npm user for Verdaccio.",
     "expectedCommand": "npm adduser",
     "beforeCommand": "nohup verdaccio > verdaccio.log 2>&1 &",
     "checkCommand": "npm whoami --registry http://localhost:4873 | grep -q '.'",
     "outputIncludes": "Logged in",
+    "requiresUserInput": true,
     "explanation": "Authenticates you with your local registry so you can publish packages. We start Verdaccio in the background if it's not already running."
   },
   {
@@ -349,6 +362,8 @@
   {
     "description": "Install your package from the local registry.",
     "expectedCommand": "npm install my-npm-project",
+    "preCheckCommand": "curl -s http://localhost:4873 | grep -q 'Verdaccio'",
+    "beforeCommand": "nohup verdaccio > verdaccio.log 2>&1 &",
     "checkCommand": "ls node_modules | grep -q 'my-npm-project'",
     "outputIncludes": "added",
     "explanation": "Installs your package from the local registry."
@@ -361,25 +376,166 @@
     "explanation": "Removes your package from the current project."
   },
   {
-    "description": "Unpublish your package from the local registry.",
-    "expectedCommand": "npm unpublish --force",
-    "checkCommand": "! npm view my-npm-project --registry http://localhost:4873 | grep -q 'version'",
-    "afterCommand": "lsof -ti :4873 | xargs kill",
-    "outputIncludes": "",
-    "explanation": "Removes your package from the local registry. Safe to test without affecting public npm."
+    "description": "Deprecate a version of your package with a warning message.",
+    "expectedCommand": "npm deprecate my-npm-project@1.0.1 \"Deprecated due to critical bug\"",
+    "preCheckCommand": "curl -s http://localhost:4873 | grep -q 'Verdaccio'",
+    "beforeCommand": "nohup verdaccio > verdaccio.log 2>&1 &",
+    "checkCommand": "npm view my-npm-project@1.0.1 | grep -i 'deprecated'",
+    "outputIncludes": "npm notice deprecating",
+    "explanation": "Marks a specific version of your package as deprecated, warning users who try to install it. We check for any deprecation notice, not a specific message."
+  },
+  {
+    "description": "Remove the deprecation warning from your package version.",
+    "expectedCommand": "npm undeprecate my-npm-project@1.0.1 ",
+    "preCheckCommand": "curl -s http://localhost:4873 | grep -q 'Verdaccio'",
+    "beforeCommand": "nohup verdaccio > verdaccio.log 2>&1 &",
+    "checkCommand": "! npm view my-npm-project@1.0.1 | grep -i 'deprecated'",
+    "outputIncludes": "npm notice undeprecating",
+    "explanation": "Undeprecates a previously deprecated version by clearing the warning message."
   },
   {
     "description": "Uninstall Verdaccio from your system.",
     "expectedCommand": "npm uninstall -g verdaccio",
     "checkCommand": "! command -v verdaccio",
     "outputIncludes": "",
+    "afterCommand": "rm verdaccio.log",
     "explanation": "Removes the Verdaccio CLI from your global environment. This step is optional if you want to keep using it later."
   },
   {
-    "description": "Reset your npm registry to the official public registry.",
+    "description": "Reset your npm registry to the official public registry https://registry.npmjs.org/",
     "expectedCommand": "npm set registry https://registry.npmjs.org/",
     "checkCommand": "npm config get registry | grep -q 'registry.npmjs.org'",
     "outputIncludes": "",
     "explanation": "Restores your npm configuration to use the official public registry. This ensures future installs and publishes go to npmjs.com."
+  },
+  {
+    "description": "Validate your previous change.",
+    "expectedCommand": "npm get registry",
+    "outputIncludes": "registry.npmjs.org",
+    "explanation": "Restores your npm configuration to use the official public registry. This ensures future installs and publishes go to npmjs.com."
+  },
+  {
+    "description": "List owners of lodash npm package.",
+    "expectedCommand": "npm owner ls lodash",
+    "outputIncludes": "mathias <mathias@qiwi.be>",
+    "explanation": "Displays all users who have publish rights for lodash package."
+  },
+  {
+    "description": "View angular organization memberships.",
+    "expectedCommand": "npm org ls angular",
+    "outputIncludes": "angular - owner",
+    "explanation": "Lists users in the angular organization on npm (requires appropriate permissions)."
+  },
+  {
+    "description": "List teams in angular organization.",
+    "expectedCommand": "npm team ls angular",
+    "outputIncludes": "@angular has",
+    "explanation": "Shows all teams within the specified npm organization."
+  },
+  {
+    "description": "Show access permissions for @babel/core.",
+    "expectedCommand": "npm access list collaborators @babel/core",
+    "outputIncludes": "existentialism: read-write",
+    "explanation": "Displays who has access to @babel/core and what level of permission they have."
+  },
+  {
+    "description": "Log in to your npm account using legacy authentication.",
+    "expectedCommand": "npm login --auth-type=legacy",
+    "strictCommandMatch": true,
+    "requiresUserInput": true,
+    "checkCommand": "npm whoami",
+    "outputIncludes": "Logged in",
+    "explanation": "Authenticates your npm account using legacy credentials. This is useful for older workflows or when MFA isn't required."
+  },
+  {
+    "description": "List your authentication tokens.",
+    "expectedCommand": "npm token list",
+    "outputIncludes": "Publish token",
+    "explanation": "Shows all active authentication tokens for your account, including automation and session tokens."
+  },
+  {
+    "description": "View the bug tracker URL for axios.",
+    "expectedCommand": "npm bugs axios",
+    "strictCommandMatch": true,
+    "outputIncludes": "",
+    "explanation": "Opens the bug tracker or issue page for the specified package."
+  },
+  {
+    "description": "View the repository URL for axios.",
+    "expectedCommand": "npm repo axios",
+    "strictCommandMatch": true,
+    "outputIncludes": "",
+    "explanation": "Opens the source code repository for the specified package."
+  },
+  {
+    "description": "List dist-tags for axios.",
+    "expectedCommand": "npm dist-tag ls axios",
+    "outputIncludes": "latest",
+    "explanation": "Shows all distribution tags for the specified package, such as 'latest' or 'beta'."
+  },
+  {
+    "description": "View the path where global npm packages are installed.",
+    "expectedCommand": "npm prefix -g",
+    "strictCommandMatch": true,
+    "outputIncludes": "node",
+    "explanation": "Displays the global installation prefix, which determines where globally installed packages are stored."
+  },
+  {
+    "description": "Find the root directory of your current npm project.",
+    "expectedCommand": "npm root",
+    "strictCommandMatch": true,
+    "outputIncludes": "node_modules",
+    "explanation": "Shows the root directory where npm installs local packages — typically the node_modules folder."
+  },
+  {
+    "description": "Check if npm command-line completion is available.",
+    "expectedCommand": "npm completion",
+    "outputIncludes": "complete",
+    "explanation": "Outputs shell completion script for npm commands, useful for enabling tab-completion in your terminal."
+  },
+  {
+    "description": "Star the lodash package to mark it as a favorite.",
+    "expectedCommand": "npm star lodash ",
+    "outputIncludes": "lodash",
+    "explanation": "Stars the specified package on npm, marking it as a favorite in your account."
+  },
+  {
+    "description": "Star the @max-black/npm-practice package to mark it as a favorite.",
+    "expectedCommand": "npm star @max-black/npm-practice",
+    "outputIncludes": "npm-practice",
+    "explanation": "Stars the specified package on npm, marking it as a favorite in your account."
+  },
+  {
+    "doesntWork": true,
+    "description": "List all packages you've starred on npm.",
+    "expectedCommand": "npm stars",
+    "strictCommandMatch": true,
+    "explanation": "Displays a list of packages you've starred, showing your favorites across npm."
+  },
+  {
+    "description": "Unstar the lodash package to remove it from your favorites.",
+    "expectedCommand": "npm unstar lodash",
+    "outputIncludes": "lodash",
+    "explanation": "Removes the star from the specified package, unmarking it as a favorite."
+  },
+  {
+    "doesntWork": true,
+    "description": "List all packages you've starred on npm.",
+    "expectedCommand": "npm stars",
+    "strictCommandMatch": true,
+    "explanation": "Displays a list of packages you've starred, showing your favorites across npm."
+  },
+  {
+    "description": "Edit the metadata for axios.",
+    "expectedCommand": "npm edit axios",
+    "strictCommandMatch": true,
+    "outputIncludes": "package.json",
+    "explanation": "Opens the axios package folder in your default editor so you can inspect or modify its contents."
+  },
+  {
+    "description": "Inspect metadata for the current package.",
+    "expectedCommand": "npm pkg get name",
+    "outputIncludes": "my-npm-project",
+    "explanation": "Retrieves a specific field from your package.json file using npm's pkg subcommand."
   }
 ]

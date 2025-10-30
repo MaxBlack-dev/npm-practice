@@ -9,10 +9,17 @@ terminal.
 
 ## 🚀 Quick Start
 
+## 📦 Prerequisites
+
+To use this CLI tutor, you must have:
+
+- **Node.js and npm installed** on your system. You can download them from the official site: [https://nodejs.org](https://nodejs.org)
+- **npm version 11.6.2 or later** — all features in this tutor have been tested with npm 11.6.2.
+
 ### ✅ Linux / macOS
 
 1. Open your terminal and navigate to the project folder.
-2. Make fine executable:
+2. Make file executable:
 
    ```bash
    chmod +x run-me.sh

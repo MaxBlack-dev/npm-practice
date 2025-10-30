@@ -258,12 +258,34 @@ function handleInput(input) {
       try {
         console.log(chalk.gray(`▶ Running: ${cmd}`));
         execSync(cmd, { stdio: 'ignore', shell: true });
+        
+        // Execute afterCommand if available
+        if (task.afterCommand) {
+          try {
+            console.log(chalk.gray(`🧹 Cleaning up with: ${task.afterCommand}`));
+            execSync(task.afterCommand, { stdio: 'ignore', shell: true });
+            console.log(chalk.gray("🧼 Cleanup completed."));
+          } catch (e) {
+            console.log(chalk.red(`⚠️ Failed to run afterCommand: ${e.message}`));
+          }
+        }
       } catch (e) {
         const nonZeroOkay = task.nonZeroOkay === true;
         if (nonZeroOkay) {
           console.log(chalk.gray(`ℹ️ Task ${i + 1} exited with code ${e.status}, but that's expected.`));
         } else {
           console.log(chalk.red(`⚠️ Skipped Task ${i + 1} due to error: ${e.message}`));
+        }
+        
+        // Still execute afterCommand even if main command failed
+        if (task.afterCommand) {
+          try {
+            console.log(chalk.gray(`🧹 Cleaning up with: ${task.afterCommand}`));
+            execSync(task.afterCommand, { stdio: 'ignore', shell: true });
+            console.log(chalk.gray("🧼 Cleanup completed."));
+          } catch (e) {
+            console.log(chalk.red(`⚠️ Failed to run afterCommand: ${e.message}`));
+          }
         }
       }
     }
@@ -274,11 +296,12 @@ function handleInput(input) {
     return;
   }
 
-  if (trimmed === 'npm login' || trimmed === 'npm adduser') {
+  if (tasks[currentTaskIndex].requiresUserInput === true) {
     rl.pause(); // ⏸️ Stop intercepting input
 
     const { spawn } = require('child_process');
-    const login = spawn('npm', ['login'], { stdio: 'inherit', shell: true });
+      const args = trimmed.split(' ');
+      const login = spawn(args[0], args.slice(1), { stdio: 'inherit', shell: true });
 
     login.on('exit', (code) => {
       rl.resume(); // ▶️ Resume input after login completes
