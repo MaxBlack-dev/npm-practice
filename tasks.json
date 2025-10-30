@@ -398,8 +398,8 @@
     "expectedCommand": "npm uninstall -g verdaccio",
     "checkCommand": "! command -v verdaccio",
     "outputIncludes": "",
-    "afterCommand": "rm verdaccio.log",
-    "explanation": "Removes the Verdaccio CLI from your global environment. This step is optional if you want to keep using it later."
+    "afterCommand": "rm -f verdaccio.log && pkill -f verdaccio || true && rm -rf ~/.local/share/verdaccio ~/.verdaccio",
+    "explanation": "Removes the Verdaccio CLI and clears its registry data so you can start fresh next time."
   },
   {
     "description": "Reset your npm registry to the official public registry https://registry.npmjs.org/",
@@ -526,14 +526,21 @@
     "explanation": "Displays a list of packages you've starred, showing your favorites across npm."
   },
   {
+    "description": "Set a user-friendly editor for npm edit. For Mac you can use 'open -a TextEdit', for Windows use 'notepad', and for Linux use 'gedit'.",
+    "expectedCommand": "npm config set editor 'open -a TextEdit'",
+    "checkCommand": "test -n \"$(npm config get editor)\"",
+    "explanation": "Configures npm to use a graphical editor instead of vim. This makes editing package metadata easier for most users across macOS, Windows, and Linux."
+  },
+  {
     "description": "Edit the metadata for axios.",
     "expectedCommand": "npm edit axios",
     "strictCommandMatch": true,
     "outputIncludes": "package.json",
+    "requiresUserInput": true,
     "explanation": "Opens the axios package folder in your default editor so you can inspect or modify its contents."
   },
   {
-    "description": "Inspect metadata for the current package.",
+    "description": "Inspect metadata for the current package, and print it's name.",
     "expectedCommand": "npm pkg get name",
     "outputIncludes": "my-npm-project",
     "explanation": "Retrieves a specific field from your package.json file using npm's pkg subcommand."
