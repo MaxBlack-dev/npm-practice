@@ -291,6 +291,17 @@ function handleInput(input) {
       try {
         console.log(chalk.gray(`▶ Running: ${cmd}`));
         
+        // Execute beforeCommand if available
+        if (task.beforeCommand) {
+          try {
+            console.log(chalk.gray(`🔧 Setting up with: ${task.beforeCommand}`));
+            execSync(task.beforeCommand, { stdio: 'ignore', shell: true });
+            console.log(chalk.gray("🔧 Setup completed."));
+          } catch (e) {
+            console.log(chalk.red(`⚠️ Failed to run beforeCommand: ${e.message}`));
+          }
+        }
+        
         // Handle commands that require user input
         if (task.requiresUserInput === true) {
           console.log(chalk.yellow(`⚠️ Task ${i + 1} requires user input. Please interact with the command:`));

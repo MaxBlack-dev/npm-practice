@@ -344,7 +344,7 @@
   {
     "description": "Create a local npm user for Verdaccio.",
     "expectedCommand": "npm adduser",
-    "beforeCommand": "lsof -ti :4873 | xargs kill 2>/dev/null || true && sleep 1 && rm -rf ~/.config/verdaccio && nohup verdaccio > verdaccio.log 2>&1 & for i in {1..10}; do sleep 1; curl -s http://localhost:4873 | grep -q 'Verdaccio' && break; done",
+    "beforeCommand": "lsof -ti :4873 | xargs kill 2>/dev/null || true && sleep 2 && rm -rf ~/.config/verdaccio && nohup verdaccio > verdaccio.log 2>&1 & for i in {1..20}; do sleep 1; curl -s http://localhost:4873 >/dev/null 2>&1 && curl -s http://localhost:4873 | grep -q 'Verdaccio' && break; [ $i -eq 20 ] && echo 'Verdaccio failed to start' && exit 1; done && sleep 1",
     "preCheckCommand": "curl -s http://localhost:4873 | grep -q 'Verdaccio'",
     "checkCommand": "npm whoami --registry http://localhost:4873 | grep -q '.'",
     "outputIncludes": "Logged in",
