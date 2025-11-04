@@ -129,6 +129,37 @@ function handleInput(input) {
 
   if (lower === 'reset') {
     try {
+      console.log(chalk.blue("🔄 Starting comprehensive reset..."));
+      
+      // 1. Reset npm registry to official registry
+      try {
+        console.log(chalk.gray("🌐 Resetting npm registry to official registry..."));
+        execSync('npm set registry https://registry.npmjs.org/', { stdio: 'ignore', shell: true });
+        console.log(chalk.gray("✅ Registry reset to official npm registry"));
+      } catch (e) {
+        console.log(chalk.yellow("⚠️ Failed to reset npm registry"));
+      }
+      
+      // 2. Stop verdaccio and clean its data
+      try {
+        console.log(chalk.gray("🛑 Stopping verdaccio and cleaning data..."));
+        execSync('lsof -ti :4873 | xargs kill 2>/dev/null || true', { stdio: 'ignore', shell: true });
+        execSync('rm -rf ~/.config/verdaccio', { stdio: 'ignore', shell: true });
+        console.log(chalk.gray("✅ Verdaccio stopped and data cleaned"));
+      } catch (e) {
+        console.log(chalk.gray("ℹ️ Verdaccio cleanup completed"));
+      }
+      
+      // 3. Remove verdaccio global package if installed
+      try {
+        console.log(chalk.gray("🗑️ Removing verdaccio global package..."));
+        execSync('npm uninstall -g verdaccio', { stdio: 'ignore', shell: true });
+        console.log(chalk.gray("✅ Verdaccio global package removed"));
+      } catch (e) {
+        console.log(chalk.gray("ℹ️ Verdaccio was not installed globally"));
+      }
+      
+      // 4. Clear all files in current directory
       const files = fs.readdirSync(process.cwd());
       for (const file of files) {
         const filePath = path.join(process.cwd(), file);
@@ -136,6 +167,7 @@ function handleInput(input) {
       }
       console.log(chalk.red("🧹 Cleared all files in current directory."));
 
+      // 5. Reset progress file
       if (fs.existsSync(progressFile)) {
         fs.unlinkSync(progressFile);
         console.log(chalk.red("🧼 Progress reset."));
@@ -143,10 +175,11 @@ function handleInput(input) {
 
       currentTaskIndex = 0;
       showCount = 0;
-      console.log(chalk.blue("\n🔄 All data cleared. Starting from the beginning..."));
+      console.log(chalk.green("\n🔄 Complete reset finished! Starting from the beginning..."));
       showTask(tasks[currentTaskIndex]);
     } catch (e) {
       console.log(chalk.red("⚠️ Failed to reset. You may need to delete files manually."));
+      console.log(chalk.red(`Error: ${e.message}`));
       showTask(tasks[currentTaskIndex]);
     }
     return;
@@ -257,7 +290,14 @@ function handleInput(input) {
       const cmd = task.expectedCommand;
       try {
         console.log(chalk.gray(`▶ Running: ${cmd}`));
-        execSync(cmd, { stdio: 'ignore', shell: true });
+        
+        // Handle commands that require user input
+        if (task.requiresUserInput === true) {
+          console.log(chalk.yellow(`⚠️ Task ${i + 1} requires user input. Please interact with the command:`));
+          execSync(cmd, { stdio: 'inherit', shell: true });
+        } else {
+          execSync(cmd, { stdio: 'ignore', shell: true });
+        }
         
         // Execute afterCommand if available
         if (task.afterCommand) {

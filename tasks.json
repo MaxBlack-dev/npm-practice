@@ -344,11 +344,12 @@
   {
     "description": "Create a local npm user for Verdaccio.",
     "expectedCommand": "npm adduser",
-    "beforeCommand": "nohup verdaccio > verdaccio.log 2>&1 &",
+    "beforeCommand": "lsof -ti :4873 | xargs kill 2>/dev/null || true && sleep 1 && rm -rf ~/.config/verdaccio && nohup verdaccio > verdaccio.log 2>&1 & for i in {1..10}; do sleep 1; curl -s http://localhost:4873 | grep -q 'Verdaccio' && break; done",
+    "preCheckCommand": "curl -s http://localhost:4873 | grep -q 'Verdaccio'",
     "checkCommand": "npm whoami --registry http://localhost:4873 | grep -q '.'",
     "outputIncludes": "Logged in",
     "requiresUserInput": true,
-    "explanation": "Authenticates you with your local registry so you can publish packages. We start Verdaccio in the background if it's not already running."
+    "explanation": "Authenticates you with your local registry so you can publish packages. We stop existing Verdaccio, clean user data, and start fresh."
   },
   {
     "description": "Publish your package to the local registry.",
@@ -392,6 +393,14 @@
     "checkCommand": "! npm view my-npm-project@1.0.1 | grep -i 'deprecated'",
     "outputIncludes": "npm notice undeprecating",
     "explanation": "Undeprecates a previously deprecated version by clearing the warning message."
+  },
+  {
+    "description": "Remove your package from the local registry.",
+    "expectedCommand": "npm unpublish --force",
+    "preCheckCommand": "curl -s http://localhost:4873 | grep -q 'Verdaccio'",
+    "beforeCommand": "nohup verdaccio > verdaccio.log 2>&1 &",
+    "checkCommand": "! npm view my-npm-project --registry http://localhost:4873 | grep -q 'version'",
+    "explanation": "Unpublishes your package from the local Verdaccio registry so it can be republished or removed completely."
   },
   {
     "description": "Uninstall Verdaccio from your system.",
@@ -526,18 +535,24 @@
     "explanation": "Displays a list of packages you've starred, showing your favorites across npm."
   },
   {
-    "description": "Set a user-friendly editor for npm edit. For Mac you can use 'open -a TextEdit', for Windows use 'notepad', and for Linux use 'gedit'.",
-    "expectedCommand": "npm config set editor 'open -a TextEdit'",
+    "description": "Set VS Code as your editor for npm edit. You need to have VS Code installed and available in your PATH, you can download it from here https://code.visualstudio.com/.",
+    "expectedCommand": "npm config set editor code",
     "checkCommand": "test -n \"$(npm config get editor)\"",
-    "explanation": "Configures npm to use a graphical editor instead of vim. This makes editing package metadata easier for most users across macOS, Windows, and Linux."
+    "explanation": "Configures npm to use VS Code for editing packages. VS Code works perfectly with npm edit as it can open entire package folders. If you don't have VS Code installed, download it from https://code.visualstudio.com/ and make sure it's available in your PATH."
   },
   {
-    "description": "Edit the metadata for axios.",
+    "description": "Verify that VS Code has been configured as your npm editor.",
+    "expectedCommand": "npm config get editor",
+    "outputIncludes": "code",
+    "explanation": "Displays the currently configured npm editor to confirm VS Code has been set. You should see 'code' as the output."
+  },
+  {
+    "description": "Edit the axios package using VS Code editor we configured in previous steps.",
     "expectedCommand": "npm edit axios",
     "strictCommandMatch": true,
-    "outputIncludes": "package.json",
-    "requiresUserInput": true,
-    "explanation": "Opens the axios package folder in your default editor so you can inspect or modify its contents."
+    "outputIncludes": "rebuilt dependencies successfully",
+    "afterCommand": "npm config delete editor",
+    "explanation": "Opens the entire axios package folder in VS Code, where you can browse and edit all files including package.json, source code, and documentation. VS Code is perfect for exploring npm packages!"
   },
   {
     "description": "Inspect metadata for the current package, and print it's name.",
