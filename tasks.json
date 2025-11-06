@@ -650,5 +650,22 @@
     "expectedCommand": "npm help-search install",
     "outputIncludes": "npm help install",
     "explanation": "Searches the npm CLI documentation for topics related to the keyword, helping you discover relevant commands."
+  },
+  {
+    "description": "Explore the axios package directory and list its contents.",
+    "expectedCommand": "npm explore axios -- ls",
+    "outputIncludes": "index.d.cts",
+    "explanation": "Spawns a subshell in the axios package directory and runs the 'ls' command to list its contents. This is useful for inspecting package structure and files."
+  },
+  {
+    "description": "Query all direct dependencies using CSS-style selectors.",
+    "expectedCommand": "npm query ':root > *'",
+    "outputIncludes": "axios",
+    "explanation": "Uses CSS-style selectors to query your dependency tree. The ':root > *' selector returns all direct dependencies of your project."
+  },
+  {
+    "description": "List installed packages with extended information.",
+    "expectedCommand": "npm ll",
+    "explanation": "Lists all installed packages with extended information. This is an alias for 'npm ls --long' and shows additional details like package descriptions and homepage URLs."
   }
 ]

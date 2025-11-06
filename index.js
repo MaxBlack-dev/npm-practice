@@ -219,8 +219,10 @@ function handleInput(input) {
       showTask(tasks[currentTaskIndex]);
     } else {
       console.log(chalk.green.bold("\n🎉 Congratulations! You've completed all tasks."));
-      fs.unlinkSync(progressFile);
-      rl.close();
+      console.log(chalk.blue("You can use 'reset' to start over, or 'exit' to quit."));
+      currentTaskIndex = tasks.length - 1; // Stay at the last task
+      saveProgress();
+      retryPrompt();
     }
     return;
   }
@@ -253,8 +255,10 @@ function handleInput(input) {
           showTask(tasks[currentTaskIndex]);
         } else {
           console.log(chalk.green.bold("\n🎉 Congratulations! You've completed all tasks."));
-          fs.unlinkSync(progressFile);
-          rl.close();
+          console.log(chalk.blue("You can use 'reset' to start over, or 'exit' to quit."));
+          currentTaskIndex = tasks.length - 1; // Stay at the last task
+          saveProgress();
+          retryPrompt();
         }
       } else {
         retryPrompt();
@@ -267,10 +271,21 @@ function handleInput(input) {
   }
 
   if (lower.startsWith('go ')) {
-    const target = parseInt(trimmed.split(' ')[1], 10);
+    const parts = trimmed.split(' ');
+    const target = parseInt(parts[1], 10);
+    const hasSkipFlag = parts.includes('--skip') || parts.includes('-skip') || parts.includes('skip');
+    
     if (isNaN(target) || target < 1 || target > tasks.length) {
       console.log(chalk.red("❌ Invalid task number. Use: go 4"));
       retryPrompt();
+      return;
+    }
+
+    // Skip mode: just jump to the task without running anything
+    if (hasSkipFlag) {
+      currentTaskIndex = target - 1;
+      saveProgress();
+      showTask(tasks[currentTaskIndex]);
       return;
     }
 
@@ -379,8 +394,10 @@ function handleInput(input) {
           showTask(tasks[currentTaskIndex]);
         } else {
           console.log(chalk.green.bold("\n🎉 Congratulations! You've completed all tasks."));
-          fs.unlinkSync(progressFile);
-          rl.close();
+          console.log(chalk.blue("You can use 'reset' to start over, or 'exit' to quit."));
+          currentTaskIndex = tasks.length - 1; // Stay at the last task
+          saveProgress();
+          retryPrompt();
         }
       } else {
         console.log(chalk.red("❌ Task failed. Try again or type 'show' for help."));
@@ -466,8 +483,10 @@ function handleInput(input) {
           showTask(tasks[currentTaskIndex]);
         } else {
           console.log(chalk.green.bold("\n🎉 Congratulations! You've completed all tasks."));
-          fs.unlinkSync(progressFile);
-          rl.close();
+          console.log(chalk.blue("You can use 'reset' to start over, or 'exit' to quit."));
+          currentTaskIndex = tasks.length - 1; // Stay at the last task
+          saveProgress();
+          retryPrompt();
         }
       } else {
         if (err) {
