@@ -2,7 +2,6 @@
   {
     "description": "Find out what commands and options npm provides.",
     "expectedCommand": "npm help",
-    "outputIncludes": "Usage:",
     "explanation": "Displays general help information about npm, including available commands and usage examples."
   },
   {
@@ -34,31 +33,27 @@
     "description": "Bump the version of your project using npm. Try increasing it with a patch update.",
     "expectedCommand": "npm version patch",
     "checkCommand": "grep -q '\"version\": \"1.0.1\"' package.json",
-    "outputIncludes": "v1.0.1",
     "explanation": "Increments the version field in package.json using semantic versioning (patch level)."
   },
   {
     "description": "List installed packages in your project.",
     "expectedCommand": "npm ls",
-    "outputIncludes": "axios",
     "explanation": "Displays a tree of all installed packages and their dependencies."
   },
   {
     "description": "Reinstall project dependencies cleanly using lockfile.",
-    "beforeCommand": "rm -rf node_modules",
-    "preCheckCommand": "test ! -d node_modules",
     "expectedCommand": "npm ci",
-    "checkCommand": "npm list axios | grep -q 'axios' && test -d node_modules",
-    "outputIncludes": "added",
+    "beforeCommand": "rm -rf node_modules",
+    "preCheckCommand": "test ! -d node_modules && test -f package-lock.json",
+    "checkCommand": "npm list axios | grep -q 'axios' && test -d node_modules && test package-lock.json -ot node_modules",
     "explanation": "Performs a clean install of dependencies based on package-lock.json, removing node_modules first."
   },
   {
     "description": "Verify the integrity of the npm cache.",
+    "expectedCommand": "npm cache verify",
     "beforeCommand": "mkdir -p ~/.npm/_cacache/tmp && touch ~/.npm/_cacache/tmp/fake.tar.gz",
     "preCheckCommand": "test -f ~/.npm/_cacache/tmp/fake.tar.gz",
-    "expectedCommand": "npm cache verify",
     "checkCommand": "test ! -f ~/.npm/_cacache/tmp/fake.tar.gz",
-    "outputIncludes": "verified",
     "explanation": "Checks and cleans the npm cache to ensure it's valid and not corrupted."
   },
   {
@@ -70,8 +65,6 @@
   {
     "description": "List installed packages in your project.",
     "expectedCommand": "npm ls",
-    "checkCommand": "npm ls | grep -q 'axios'",
-    "outputIncludes": "axios",
     "explanation": "Displays a tree of all installed packages and their dependencies."
   },
   {
@@ -83,21 +76,17 @@
   {
     "description": "List installed packages in your project.",
     "expectedCommand": "npm ls",
-    "checkCommand": "npm ls | grep -q 'axios'",
-    "outputIncludes": "axios",
     "explanation": "Displays a tree of all installed packages and their dependencies."
   },
   {
     "description": "Install express version 5.1.0 and body-parser version 2.2.0 to create a duplicate dependency scenario.",
     "expectedCommand": "npm install express@5.1.0 body-parser@2.2.0",
-    "outputIncludes": "added",
-    "checkCommand": "npm ls statuses | grep -q 'statuses@'",
+    "checkCommand": "npm list express | grep -q 'express@5.1.0' && npm list body-parser | grep -q 'body-parser@2.2.0' && npm ls statuses | grep -q 'statuses@'",
     "explanation": "Installs two packages that depend on different versions of 'statuses', creating a duplicate in the tree."
   },
   {
     "description": "Inspect the dependency tree for the 'statuses' package.",
     "expectedCommand": "npm ls statuses",
-    "outputIncludes": "statuses@",
     "explanation": "Shows how multiple versions of 'statuses' are nested under different packages."
   },
   {
@@ -109,14 +98,12 @@
   {
     "description": "Deduplicate your dependency tree to flatten duplicate packages.",
     "expectedCommand": "npm dedupe",
-    "outputIncludes": "removed",
-    "checkCommand": "npm ls statuses | grep -v 'node_modules/body-parser/node_modules/statuses'",
+    "checkCommand": "! npm ls statuses | grep -q 'statuses@2.0.2'",
     "explanation": "Attempts to flatten the dependency tree by hoisting shared packages like 'statuses'."
   },
   {
     "description": "Recheck the dependency tree for 'statuses' after deduplication.",
     "expectedCommand": "npm ls statuses",
-    "outputIncludes": "statuses@",
     "explanation": "Verifies that 'statuses' has been hoisted and duplicates removed."
   },
   {
@@ -142,14 +129,11 @@
     "description": "Update all outdated packages in your project.",
     "expectedCommand": "npm update",
     "checkCommand": "npm list chalk | grep -q 'chalk@' && ! npm list chalk | grep -q 'chalk@4.1.1'",
-    "outputIncludes": "changed",
     "explanation": "Updates all dependencies in package.json to their latest compatible versions."
   },
   {
     "description": "Inspect the installed version of chalk directly by listing only that package.",
     "expectedCommand": "npm ls chalk",
-    "outputIncludes": "chalk",
-    "strictCommandMatch": true,
     "explanation": "Displays the installed version of the chalk package to confirm it's present in your project."
   },
   {
@@ -167,20 +151,18 @@
   {
     "description": "View details about the axios package.",
     "expectedCommand": "npm view axios",
-    "outputIncludes": "axios@",
     "explanation": "Displays metadata about the axios package, such as version, description, and dependencies."
   },
   {
     "description": "Compare two versions 4.1.2 and 5.0.0 of chalk to see what changed.",
     "expectedCommand": "npm diff --diff=chalk@4.1.2 --diff=chalk@5.0.0",
-    "outputIncludes": "diff",
     "explanation": "Displays file-level differences between chalk version 4.1.2 and 5.0.0 using npm diff."
   },
   {
     "description": "Install the native module 'sqlite3' to prepare for a rebuild scenario.",
     "expectedCommand": "npm install sqlite3",
-    "outputIncludes": "added",
     "checkCommand": "test -d node_modules/sqlite3",
+    "outputIncludes": "added",
     "explanation": "Installs a native Node.js module that compiles binary bindings during install. We'll simulate a broken build next."
   },
   {
@@ -197,21 +179,19 @@
     "expectedCommand": "npm doctor",
     "beforeCommand": "npm install -g npm@10.2.0",
     "preCheckCommand": "npm -v | grep -q '^10\\.'",
-    "outputIncludes": "Check",
+    "outputIncludes": "not ok  Use npm",
     "nonZeroOkay": true,
     "explanation": "Runs a set of checks to identify potential issues in your npm and Node.js setup."
   },
   {
     "description": "Upgrade npm to the latest version to resolve the issue.",
     "expectedCommand": "npm install -g npm@latest",
-    "checkCommand": "! npm -v | grep -q '^10\\.'",
-    "outputIncludes": "changed",
+    "checkCommand": "! npm -v | grep -q '^10\\.' && npm doctor | awk '/Checking npm version/{getline; print}' | grep -q '^Ok$'",
     "explanation": "Upgrades npm to the latest version so that npm doctor no longer reports it as outdated."
   },
   {
     "description": "Run npm doctor again to confirm the issue is resolved.",
     "expectedCommand": "npm doctor",
-    "checkCommand": "npm doctor | awk '/Checking npm version/{getline; print}' | grep -q '^Ok$'",
     "outputIncludes": "Checking npm version",
     "nonZeroOkay": true,
     "explanation": "Verifies that npm doctor no longer reports the outdated npm version."
@@ -220,14 +200,12 @@
     "description": "Lock down your dependencies using shrinkwrap.",
     "expectedCommand": "npm shrinkwrap",
     "checkCommand": "test -f npm-shrinkwrap.json",
-    "outputIncludes": "npm-shrinkwrap.json",
     "afterCommand": "rm npm-shrinkwrap.json",
     "explanation": "Generates a npm-shrinkwrap.json file to lock exact versions of dependencies for reproducible installs."
   },
   {
     "description": "List your current npm configuration settings.",
     "expectedCommand": "npm config list",
-    "outputIncludes": "HOME",
     "explanation": "Displays all current npm configuration values, including user-level and global settings."
   },
   {
@@ -259,13 +237,12 @@
   {
     "description": "Generate a software bill of materials for your project in SPDX format.",
     "expectedCommand": "npm sbom --sbom-format=spdx",
-    "outputIncludes": "SPDX",
+    "outputIncludes": "spdxVersion",
     "explanation": "Creates a standardized SPDX report listing all dependencies and licenses in your project."
   },
   {
     "description": "Check which dependencies are seeking funding.",
     "expectedCommand": "npm fund",
-    "outputIncludes": "https://github.com/sponsors",
     "explanation": "Shows which packages support open-source funding and how to contribute."
   },
   {
@@ -279,32 +256,30 @@
   {
     "description": "Symlink your local package for development.",
     "expectedCommand": "npm link",
-    "outputIncludes": "added",
+    "checkCommand": "npm ls -g | grep -q 'my-npm-project@'",
     "explanation": "Creates a global symlink to your package, useful for testing CLI tools or shared modules."
   },
   {
     "description": "Verify that your package is now globally linked.",
     "expectedCommand": "npm ls -g",
-    "checkCommand": "npm ls -g | grep -q 'my-npm-project@'",
-    "outputIncludes": "my-npm-project@",
     "explanation": "Checks the global npm registry to confirm your package is linked and available for use."
   },
   {
     "description": "Remove the global symlink to your package.",
     "expectedCommand": "npm unlink -g my-npm-project",
+    "checkCommand": "! npm ls -g | grep -q 'my-npm-project@'",
     "outputIncludes": "removed",
     "explanation": "Unlinks your package from the global registry, cleaning up your development environment."
   },
   {
     "description": "Verify that your package is no longer globally linked.",
     "expectedCommand": "npm ls -g",
-    "checkCommand": "! npm ls -g | grep -q 'my-npm-project@'",
-    "outputIncludes": "",
     "explanation": "Ensures your package has been successfully unlinked from the global npm registry."
   },
   {
     "description": "Log in to your npm account.",
     "expectedCommand": "npm login",
+    "checkCommand": "npm whoami | grep -q '.'",
     "outputIncludes": "Logged in",
     "requiresUserInput": true,
     "explanation": "Authenticates your npm account so you can publish, install private packages, or manage your profile."
@@ -318,21 +293,19 @@
   {
     "description": "Log out of your npm account.",
     "expectedCommand": "npm logout",
-    "checkCommand": "npm logout 2>&1 | grep -q 'ENEEDAUTH'",
+    "checkCommand": "! npm whoami 2>/dev/null",
     "explanation": "Removes your authentication token and ends your npm session."
   },
   {
     "description": "Install Verdaccio globally to create a local npm registry.",
     "expectedCommand": "npm install -g verdaccio",
     "checkCommand": "verdaccio --version",
-    "outputIncludes": "",
     "explanation": "Verdaccio is a lightweight local npm registry. Installing it lets you publish and test packages privately."
   },
   {
     "description": "Point npm to your local registry at http://localhost:4873.",
     "expectedCommand": "npm set registry http://localhost:4873",
     "checkCommand": "npm config get registry | grep -q 'localhost:4873'",
-    "outputIncludes": "",
     "explanation": "This tells npm to use your local registry instead of the public one."
   },
   {
@@ -406,7 +379,6 @@
     "description": "Uninstall Verdaccio from your system.",
     "expectedCommand": "npm uninstall -g verdaccio",
     "checkCommand": "! command -v verdaccio",
-    "outputIncludes": "",
     "afterCommand": "rm -f verdaccio.log && pkill -f verdaccio || true && rm -rf ~/.local/share/verdaccio ~/.verdaccio",
     "explanation": "Removes the Verdaccio CLI and clears its registry data so you can start fresh next time."
   },
@@ -414,7 +386,6 @@
     "description": "Reset your npm registry to the official public registry https://registry.npmjs.org/",
     "expectedCommand": "npm set registry https://registry.npmjs.org/",
     "checkCommand": "npm config get registry | grep -q 'registry.npmjs.org'",
-    "outputIncludes": "",
     "explanation": "Restores your npm configuration to use the official public registry. This ensures future installs and publishes go to npmjs.com."
   },
   {
@@ -426,30 +397,26 @@
   {
     "description": "List owners of lodash npm package.",
     "expectedCommand": "npm owner ls lodash",
-    "outputIncludes": "mathias <mathias@qiwi.be>",
     "explanation": "Displays all users who have publish rights for lodash package."
   },
   {
     "description": "View angular organization memberships.",
     "expectedCommand": "npm org ls angular",
-    "outputIncludes": "angular - owner",
     "explanation": "Lists users in the angular organization on npm (requires appropriate permissions)."
   },
   {
     "description": "List teams in angular organization.",
     "expectedCommand": "npm team ls angular",
-    "outputIncludes": "@angular has",
     "explanation": "Shows all teams within the specified npm organization."
   },
   {
     "description": "Show access permissions for @babel/core.",
     "expectedCommand": "npm access list collaborators @babel/core",
-    "outputIncludes": "existentialism: read-write",
     "explanation": "Displays who has access to @babel/core and what level of permission they have."
   },
   {
-    "description": "Log in to your npm account using legacy authentication.",
-    "expectedCommand": "npm login --auth-type=legacy",
+    "description": "Log in to your npm account using npm official registry https://registry.npmjs.org/.",
+    "expectedCommand": "npm login --registry=https://registry.npmjs.org/",
     "strictCommandMatch": true,
     "requiresUserInput": true,
     "checkCommand": "npm whoami",
@@ -459,7 +426,6 @@
   {
     "description": "List your authentication tokens.",
     "expectedCommand": "npm token list",
-    "outputIncludes": "Publish token",
     "explanation": "Shows all active authentication tokens for your account, including automation and session tokens."
   },
   {
@@ -479,21 +445,16 @@
   {
     "description": "List dist-tags for axios.",
     "expectedCommand": "npm dist-tag ls axios",
-    "outputIncludes": "latest",
     "explanation": "Shows all distribution tags for the specified package, such as 'latest' or 'beta'."
   },
   {
     "description": "View the path where global npm packages are installed.",
     "expectedCommand": "npm prefix -g",
-    "strictCommandMatch": true,
-    "outputIncludes": "node",
     "explanation": "Displays the global installation prefix, which determines where globally installed packages are stored."
   },
   {
     "description": "Find the root directory of your current npm project.",
     "expectedCommand": "npm root",
-    "strictCommandMatch": true,
-    "outputIncludes": "node_modules",
     "explanation": "Shows the root directory where npm installs local packages — typically the node_modules folder."
   },
   {
@@ -557,7 +518,137 @@
   {
     "description": "Inspect metadata for the current package, and print it's name.",
     "expectedCommand": "npm pkg get name",
-    "outputIncludes": "my-npm-project",
     "explanation": "Retrieves a specific field from your package.json file using npm's pkg subcommand."
+  },
+  {
+    "description": "View your name from your profile information.",
+    "expectedCommand": "npm profile get name",
+    "explanation": "Displays your public npm profile name."
+  },
+  {
+    "description": "Install the cowsay package to use in the next exercise.",
+    "expectedCommand": "npm install cowsay",
+    "checkCommand": "test -d node_modules/cowsay",
+    "explanation": "Installs the cowsay package which provides a fun command-line utility for displaying messages."
+  },
+  {
+    "description": "Execute the cowsay package to print a 'hello' message.",
+    "expectedCommand": "npm exec cowsay hello",
+    "outputIncludes": "hello",
+    "explanation": "Runs the cowsay binary from node_modules using npm exec, demonstrating how to execute package binaries."
+  },
+  {
+    "description": "Execute the cowsay package to print a 'world' message using npx.",
+    "expectedCommand": "npx cowsay world",
+    "outputIncludes": "world",
+    "explanation": "Runs the cowsay binary using npx, which is a shorthand for npm exec and can also download packages temporarily if not installed."
+  },
+  {
+    "description": "Set a start script in your package.json to echo 'Running application...'",
+    "expectedCommand": "npm pkg set scripts.start=\"echo 'Running application...'\"",
+    "checkCommand": "grep -q '\"scripts\"' package.json && grep -q '\"start\": \"echo' package.json",
+    "explanation": "Adds or updates the start script in package.json using npm's pkg command to set a simple echo command."
+  },
+  {
+    "description": "Verify the start script was added to your package.json.",
+    "expectedCommand": "npm pkg get scripts.start",
+    "explanation": "Retrieves the start script value from package.json to confirm it was set correctly."
+  },
+  {
+    "description": "Run a script named 'start' from your package.json.",
+    "expectedCommand": "npm run start",
+    "outputIncludes": "Running",
+    "explanation": "Executes the 'start' script defined in your package.json file using npm's run command."
+  },
+  {
+    "description": "Start your project using the default script(don't use run).",
+    "expectedCommand": "npm start",
+    "outputIncludes": "Running",
+    "explanation": "Runs the 'start' script from your package.json. Equivalent to 'npm run start'."
+  },
+  {
+    "description": "Set a test script in your package.json to echo 'All tests passed!'",
+    "expectedCommand": "npm pkg set scripts.test=\"echo 'All tests passed!'\"",
+    "checkCommand": "grep -q '\"test\": \"echo .All' package.json",
+    "explanation": "Adds or updates the test script in package.json using npm's pkg command to set a simple echo command that simulates passing tests."
+  },
+  {
+    "description": "Verify the test script was added to your package.json.",
+    "expectedCommand": "npm pkg get scripts.test",
+    "outputIncludes": "All tests passed",
+    "explanation": "Retrieves the test script value from package.json to confirm it was set correctly."
+  },
+  {
+    "description": "Run tests defined in your package.json.",
+    "expectedCommand": "npm test",
+    "checkCommand": "grep -q 'test' package.json",
+    "outputIncludes": "All tests passed",
+    "explanation": "Executes the 'test' script from your package.json to run automated tests."
+  },
+  {
+    "description": "Set a stop script in your package.json to echo 'Application stopped.'",
+    "expectedCommand": "npm pkg set scripts.stop=\"echo 'Application stopped.'\"",
+    "checkCommand": "grep -q '\"stop\": \"echo' package.json",
+    "explanation": "Adds or updates the stop script in package.json using npm's pkg command to set a simple echo command that simulates stopping an application."
+  },
+  {
+    "description": "Verify the stop script was added to your package.json.",
+    "expectedCommand": "npm pkg get scripts.stop",
+    "outputIncludes": "Application stopped",
+    "explanation": "Retrieves the stop script value from package.json to confirm it was set correctly."
+  },
+  {
+    "description": "Stop your running npm script using npm stop.",
+    "expectedCommand": "npm stop",
+    "outputIncludes": "Application stopped",
+    "explanation": "Executes the 'stop' script from your package.json to stop the application gracefully."
+  },
+  {
+    "description": "Set a restart script in your package.json to echo 'Application restarted.'",
+    "expectedCommand": "npm pkg set scripts.restart=\"echo 'Application restarted.'\"",
+    "checkCommand": "grep -q '\"restart\": \"echo' package.json",
+    "explanation": "Adds or updates the restart script in package.json using npm's pkg command to set a simple echo command that simulates restarting an application."
+  },
+  {
+    "description": "Verify the restart script was added to your package.json.",
+    "expectedCommand": "npm pkg get scripts.restart",
+    "outputIncludes": "Application restarted",
+    "explanation": "Retrieves the restart script value from package.json to confirm it was set correctly."
+  },
+  {
+    "description": "Restart your npm script by running the restart command.",
+    "expectedCommand": "npm restart",
+    "checkCommand": "grep -q 'restart' package.json",
+    "outputIncludes": "Application restarted",
+    "explanation": "Executes the 'restart' script from your package.json to restart the application gracefully."
+  },
+  {
+    "description": "Search for packages related to 'chalk'.",
+    "expectedCommand": "npm search chalk",
+    "outputIncludes": "chalk",
+    "explanation": "Searches the npm registry for packages matching the keyword 'chalk'."
+  },
+  {
+    "description": "Ping the npm registry to check connectivity.",
+    "expectedCommand": "npm ping",
+    "outputIncludes": "PONG",
+    "explanation": "Tests your connection to the npm registry. Useful for diagnosing network or auth issues."
+  },
+  {
+    "description": "Open documentation for the npm CLI.",
+    "expectedCommand": "npm docs npm",
+    "outputIncludes": "",
+    "explanation": "Opens the npm documentation in your default browser, providing help and usage guides."
+  },
+  {
+    "description": "Explain axios package.",
+    "expectedCommand": "npm explain axios",
+    "explanation": "Shows how a package is used in your project and why it's installed, including its dependency chain."
+  },
+  {
+    "description": "Search npm help documentation for a keyword.",
+    "expectedCommand": "npm help-search install",
+    "outputIncludes": "npm help install",
+    "explanation": "Searches the npm CLI documentation for topics related to the keyword, helping you discover relevant commands."
   }
 ]

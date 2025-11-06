@@ -412,9 +412,41 @@ function handleInput(input) {
     if (isAttemptingTask) {
       const stateValid = task.checkCommand ? validate(task) : true;
       const nonZeroOkay = task.nonZeroOkay === true;
-      const passed =
-          (isOutputBased && (commandSucceeded || nonZeroOkay) && outputValid) ||
-          (!isOutputBased && stateValid);
+      const hasCheckCommand = !!task.checkCommand;
+      
+      let passed = false;
+      
+      // Priority 1: If task has outputIncludes, validate output
+      if (isOutputBased) {
+        passed = (commandSucceeded || nonZeroOkay) && outputValid;
+      }
+      // Priority 2: If task has checkCommand, validate state
+      else if (hasCheckCommand) {
+        passed = stateValid;
+      }
+      // Priority 3: If task has neither, compare output with expectedCommand output
+      else {
+        try {
+          const expectedResult = execSync(task.expectedCommand, { 
+            shell: true, 
+            encoding: 'utf8',
+            stdio: ['pipe', 'pipe', 'pipe']
+          });
+          const expectedOutput = expectedResult.trim();
+          const userOutput = stdout.trim();
+          
+          passed = commandSucceeded && userOutput === expectedOutput;
+          
+          if (!passed && commandSucceeded) {
+            console.log(chalk.yellow(`⚠️ Output doesn't match expected result.`));
+            console.log(chalk.gray(`Expected: ${expectedOutput}`));
+            console.log(chalk.gray(`Got: ${userOutput}`));
+          }
+        } catch (expectedErr) {
+          // If expected command fails, user command should also fail
+          passed = !commandSucceeded;
+        }
+      }
 
       if (passed) {
         if (task.afterCommand) {
