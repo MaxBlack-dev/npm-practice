@@ -145,7 +145,6 @@
   {
     "description": "Now check for outdated packages in your project.",
     "expectedCommand": "npm outdated",
-    "outputIncludes": "",
     "explanation": "Shows which installed packages are outdated and what newer versions are available."
   },
   {
@@ -287,7 +286,6 @@
   {
     "description": "Check which npm user is currently logged in.",
     "expectedCommand": "npm whoami",
-    "outputIncludes": "",
     "explanation": "Displays the username of the currently authenticated npm account."
   },
   {
