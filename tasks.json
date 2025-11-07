@@ -430,14 +430,14 @@
     "description": "View the bug tracker URL for axios.",
     "expectedCommand": "npm bugs axios",
     "strictCommandMatch": true,
-    "outputIncludes": "",
+    "isBrowserCommand": true,
     "explanation": "Opens the bug tracker or issue page for the specified package."
   },
   {
     "description": "View the repository URL for axios.",
     "expectedCommand": "npm repo axios",
     "strictCommandMatch": true,
-    "outputIncludes": "",
+    "isBrowserCommand": true,
     "explanation": "Opens the source code repository for the specified package."
   },
   {
@@ -635,7 +635,7 @@
   {
     "description": "Open documentation for the npm CLI.",
     "expectedCommand": "npm docs npm",
-    "outputIncludes": "",
+    "isBrowserCommand": true,
     "explanation": "Opens the npm documentation in your default browser, providing help and usage guides."
   },
   {

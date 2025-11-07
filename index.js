@@ -442,26 +442,36 @@ function handleInput(input) {
         passed = stateValid;
       }
       // Priority 3: If task has neither, compare output with expectedCommand output
+      // BUT skip comparison for browser commands (they open browsers and shouldn't run twice)
       else {
-        try {
-          const expectedResult = execSync(task.expectedCommand, { 
-            shell: true, 
-            encoding: 'utf8',
-            stdio: ['pipe', 'pipe', 'pipe']
-          });
-          const expectedOutput = expectedResult.trim();
-          const userOutput = stdout.trim();
-          
-          passed = commandSucceeded && userOutput === expectedOutput;
-          
-          if (!passed && commandSucceeded) {
-            console.log(chalk.yellow(`⚠️ Output doesn't match expected result.`));
-            console.log(chalk.gray(`Expected: ${expectedOutput}`));
-            console.log(chalk.gray(`Got: ${userOutput}`));
+        // Check if this is a browser-opening command
+        const isBrowserCommand = task.isBrowserCommand === true;
+        
+        if (isBrowserCommand) {
+          // For browser commands, just check if command succeeded
+          passed = commandSucceeded || nonZeroOkay;
+        } else {
+          // For other commands, compare outputs
+          try {
+            const expectedResult = execSync(task.expectedCommand, { 
+              shell: true, 
+              encoding: 'utf8',
+              stdio: ['pipe', 'pipe', 'pipe']
+            });
+            const expectedOutput = expectedResult.trim();
+            const userOutput = stdout.trim();
+            
+            passed = commandSucceeded && userOutput === expectedOutput;
+            
+            if (!passed && commandSucceeded) {
+              console.log(chalk.yellow(`⚠️ Output doesn't match expected result.`));
+              console.log(chalk.gray(`Expected: ${expectedOutput}`));
+              console.log(chalk.gray(`Got: ${userOutput}`));
+            }
+          } catch (expectedErr) {
+            // If expected command fails, user command should also fail
+            passed = !commandSucceeded;
           }
-        } catch (expectedErr) {
-          // If expected command fails, user command should also fail
-          passed = !commandSucceeded;
         }
       }
 

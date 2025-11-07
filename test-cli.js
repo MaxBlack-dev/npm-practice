@@ -254,27 +254,24 @@ async function runTests() {
             
             // Validate outputIncludes if defined
             if (taskPassed && task.outputIncludes !== undefined && !task.requiresUserInput) {
-                // Empty string means "command succeeded, don't validate output content"
-                // (used for commands that open browsers/editors with no text output)
-                if (task.outputIncludes === "") {
-                    console.log(`✅ Output validation passed (empty string = success only)`);
+                const output = result.output + result.error;
+                const expectedOutput = task.outputIncludes;
+                
+                const outputValid = output.includes(expectedOutput);
+                
+                if (!outputValid) {
+                    console.log(`❌ Output validation failed`);
+                    console.log(`   Expected to include: "${expectedOutput}"`);
+                    console.log(`   Got: "${output.trim().substring(0, 200)}${output.length > 200 ? '...' : ''}"`);
+                    taskPassed = false;
                 } else {
-                    const output = result.output + result.error;
-                    const expectedOutput = task.outputIncludes;
-                    
-                    const outputValid = output.includes(expectedOutput);
-                    
-                    if (!outputValid) {
-                        console.log(`❌ Output validation failed`);
-                        console.log(`   Expected to include: "${expectedOutput}"`);
-                        console.log(`   Got: "${output.trim().substring(0, 200)}${output.length > 200 ? '...' : ''}"`);
-                        taskPassed = false;
-                    } else {
-                        console.log(`✅ Output validation passed`);
-                    }
+                    console.log(`✅ Output validation passed`);
                 }
             } else if (taskPassed && task.outputIncludes !== undefined && task.requiresUserInput) {
                 console.log(`ℹ️  Output validation skipped for interactive command`);
+            } else if (taskPassed && task.isBrowserCommand === true) {
+                // Browser commands just need to succeed, no output validation
+                console.log(`✅ Browser command executed successfully`);
             }
             
             // Validate checkCommand if defined
