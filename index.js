@@ -5,6 +5,7 @@ const path = require('path');
 const readline = require('readline');
 const { exec, execSync } = require('child_process');
 const chalk = require('chalk');
+const { isAIConfigured, askAI } = require('./ai-helper');
 
 const tasks = require('./tasks.json');
 const progressFile = path.join(__dirname, 'progress.json');
@@ -236,6 +237,42 @@ function handleInput(input) {
       console.log(chalk.yellow("⚠️ No explanation available for this task yet."));
     }
     rl.prompt();
+    return;
+  }
+
+  // Handle 'ai' command for AI assistant
+  if (lower === 'ai' || lower.startsWith('ai ')) {
+    if (!isAIConfigured()) {
+      console.log(chalk.yellow("🤖 AI assistant is not configured yet."));
+      console.log(chalk.gray("   Run 'node setup-ai.js' to set it up (it's free!)."));
+      rl.prompt();
+      return;
+    }
+
+    const question = trimmed.slice(2).trim();
+    if (!question) {
+      console.log(chalk.yellow("🤖 Please ask a question after 'ai'."));
+      console.log(chalk.gray("   Example: ai what is npm install?"));
+      console.log(chalk.gray("   Example: ai explain the current task"));
+      rl.prompt();
+      return;
+    }
+
+    console.log(chalk.cyan("🤖 Thinking..."));
+    
+    // Call AI asynchronously
+    askAI(question, tasks[currentTaskIndex])
+      .then(response => {
+        console.log(chalk.cyan("\n🤖 AI Assistant:"));
+        console.log(chalk.white(response));
+        console.log('');
+        rl.prompt();
+      })
+      .catch(error => {
+        console.log(chalk.red(`❌ AI Error: ${error.message}`));
+        rl.prompt();
+      });
+    
     return;
   }
 
@@ -531,6 +568,13 @@ function printMessages() {
   }
   console.log(chalk.gray(showHint));
   console.log(chalk.gray("💡 Type 'explain' to learn what the current command does and why it's useful."));
+  
+  // Show AI command if configured
+  if (isAIConfigured()) {
+    console.log(chalk.gray("🤖 Type 'ai <question>' to ask the AI assistant anything about npm."));
+    console.log(chalk.gray("   Example: ai what is npm install?"));
+  }
+  
   console.log(chalk.gray("💡 Type 'exit' anytime to quit."));
   console.log(chalk.gray("💡 Type 'reset' to clear all progress and start fresh."));
   console.log(chalk.gray("💡 Type 'skip' to skip the current task."));
