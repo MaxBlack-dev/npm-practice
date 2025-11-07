@@ -21,7 +21,7 @@ function initializeAI() {
   try {
     const apiKey = fs.readFileSync(API_KEY_FILE, 'utf8').trim();
     genAI = new GoogleGenerativeAI(apiKey);
-    model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
     return true;
   } catch (error) {
     console.error('Failed to initialize AI:', error.message);
