@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node test-cli.js"
+    "test": "node test-cli.js",
+    "test-first-100": "node test-cli.js -- 1 100"
   },
   "keywords": [
     "npm",
