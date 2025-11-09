@@ -176,16 +176,16 @@
   {
     "description": "Diagnose common environment problems.",
     "expectedCommand": "npm doctor",
-    "beforeCommand": "npm install -g npm@10.2.0",
-    "preCheckCommand": "npm -v | grep -q '^10\\.'",
-    "outputIncludes": "not ok  Use npm",
+    "beforeCommand": "npm install -g npm@11.6.1",
+    "preCheckCommand": "npm -v | grep -q '^11\\.6\\.1$'",
+    "outputIncludes": "Use npm v",
     "nonZeroOkay": true,
     "explanation": "Runs a set of checks to identify potential issues in your npm and Node.js setup."
   },
   {
     "description": "Upgrade npm to the latest version to resolve the issue.",
     "expectedCommand": "npm install -g npm@latest",
-    "checkCommand": "! npm -v | grep -q '^10\\.' && npm doctor | awk '/Checking npm version/{getline; print}' | grep -q '^Ok$'",
+    "checkCommand": "! npm -v | grep -q '^11\\.6\\.1$' && npm doctor | awk '/Checking npm version/{getline; print}' | grep -q '^Ok$'",
     "explanation": "Upgrades npm to the latest version so that npm doctor no longer reports it as outdated."
   },
   {
