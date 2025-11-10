@@ -1,0 +1,30 @@
+# Exclude progress files from Docker builds
+progress.json
+
+# Exclude node_modules (we install fresh in Docker)
+node_modules
+
+# Exclude test environment
+test-environment
+
+# Exclude logs
+*.log
+verdaccio.log
+
+# Exclude Mac-specific files
+.DS_Store
+
+# Exclude Git
+.git
+.gitignore
+
+# Exclude Docker files themselves
+Dockerfile*
+.dockerignore
+
+# Exclude documentation that's not needed in container
+*.md
+!README.md
+
+# Exclude GitHub Actions
+.github

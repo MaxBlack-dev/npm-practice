@@ -1,0 +1,52 @@
+# Dockerfile for testing npm-practice on Linux
+FROM node:20-bookworm
+
+# Install dependencies needed for testing
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    sudo \
+    lsof \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && update-ca-certificates
+
+# Configure npm with relaxed SSL for Docker environment and increased timeouts
+RUN npm config set strict-ssl false && \
+    npm config set fetch-timeout 60000 && \
+    npm config set fetch-retry-maxtimeout 120000
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy all project files
+COPY . .
+
+# Create a test user and give sudo access without password
+RUN useradd -m -s /bin/bash tester && \
+    chown -R tester:tester /app && \
+    echo "tester ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# Switch to test user
+USER tester
+
+# Configure npm for tester user with relaxed SSL for Docker environment
+RUN npm config set strict-ssl false && \
+    npm config set fetch-timeout 60000 && \
+    npm config set fetch-retry-maxtimeout 120000
+
+# Set up environment
+ENV HOME=/home/tester
+WORKDIR /home/tester/test-workspace
+
+# Copy app to home directory so we can test it
+RUN cp -r /app /home/tester/npm-practice-source
+
+# Default command: open bash for interactive testing
+CMD ["/bin/bash"]

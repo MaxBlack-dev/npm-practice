@@ -66,8 +66,9 @@ function showTask(task) {
   // Run beforeCommand if defined
   if (task.beforeCommand) {
     try {
-      console.log(chalk.gray(`⚙️ Preparing environment: ${task.beforeCommand}`));
-      execSync(task.beforeCommand, { stdio: 'ignore', shell: true });
+      let beforeCmd = maybeAddSudo(task.beforeCommand, task, true);
+      console.log(chalk.gray(`⚙️ Preparing environment: ${beforeCmd}`));
+      execSync(beforeCmd, { stdio: 'ignore', shell: true });
     } catch (e) {
       console.log(chalk.red(`❌ Failed to run beforeCommand: ${e.message}`));
     }
@@ -93,6 +94,15 @@ function showTask(task) {
     console.log(chalk.red("⚠️ Environment not ready. Fix the issue and try again."));
     rl.question('> ', handleInput);
   }
+}
+
+// Helper function to add sudo on Linux for commands that require it
+function maybeAddSudo(command, task, useBeforeFlag = false) {
+  const needsSudo = useBeforeFlag ? task.beforeRequiresSudo : task.requireSudo;
+  if (process.platform === 'linux' && needsSudo) {
+    return `sudo ${command}`;
+  }
+  return command;
 }
 
 function validate(task) {
@@ -189,7 +199,8 @@ function handleInput(input) {
   if (lower === 'show') {
     showCount++;
     saveProgress();
-    console.log(chalk.cyan(`💡 The correct command is: ${chalk.bold(task.expectedCommand)}`));
+    const cmdToShow = maybeAddSudo(task.expectedCommand, task);
+    console.log(chalk.cyan(`💡 The correct command is: ${chalk.bold(cmdToShow)}`));
     console.log(chalk.yellow("Now try running it below:"));
     printMessages();
     rl.question('> ', handleInput);
@@ -198,10 +209,11 @@ function handleInput(input) {
 
   if (lower === 'skip') {
     console.log(chalk.yellow(`⏭️ Skipping Task ${currentTaskIndex + 1}...`));
-    const cmd = task.expectedCommand;
+    let cmd = task.expectedCommand;
+    cmd = maybeAddSudo(cmd, task);
 
     try {
-      console.log(chalk.gray(`▶ Running: ${cmd}`));
+      console.log(chalk.gray(`▶ Running ${currentTaskIndex + 1}: ${cmd}`));
       execSync(cmd, { stdio: 'inherit', shell: true });
     } catch (e) {
       const nonZeroOkay = task.nonZeroOkay === true;
@@ -339,15 +351,18 @@ function handleInput(input) {
 
     for (let i = start; i < end; i++) {
       const task = tasks[i];
-      const cmd = task.expectedCommand;
+      let cmd = task.expectedCommand;
+      cmd = maybeAddSudo(cmd, task);
+      
       try {
-        console.log(chalk.gray(`▶ Running: ${cmd}`));
+        console.log(chalk.gray(`▶ Running ${i + 1}: ${cmd}`));
         
         // Execute beforeCommand if available
         if (task.beforeCommand) {
           try {
-            console.log(chalk.gray(`🔧 Setting up with: ${task.beforeCommand}`));
-            execSync(task.beforeCommand, { stdio: 'ignore', shell: true });
+            let beforeCmd = maybeAddSudo(task.beforeCommand, task, true);
+            console.log(chalk.gray(`🔧 Setting up with: ${beforeCmd}`));
+            execSync(beforeCmd, { stdio: 'ignore', shell: true });
             console.log(chalk.gray("🔧 Setup completed."));
           } catch (e) {
             console.log(chalk.red(`⚠️ Failed to run beforeCommand: ${e.message}`));
@@ -455,9 +470,22 @@ function handleInput(input) {
     const isOutputBased = !!task.outputIncludes;
 
     const strictMatch = task.strictCommandMatch === true;
+    
+    // Check if user typed the command with or without sudo
+    // On Linux, we accept both versions for requireSudo commands
+    let userCommand = trimmed;
+    // Strip 'sudo ' from the beginning for comparison purposes
+    let userCommandWithoutSudo = userCommand.replace(/^sudo\s+/, '');
+    
+    let expectedCommand = task.expectedCommand;
+    let expectedCommandWithSudo = maybeAddSudo(task.expectedCommand, task);
+    
     const isAttemptingTask = strictMatch
-        ? trimmed === task.expectedCommand
-        : trimmed === task.expectedCommand || task.expectedCommand.includes(trimmed.split(' ')[0]);
+        ? (userCommand === expectedCommand || userCommand === expectedCommandWithSudo)
+        : (userCommand === expectedCommand || 
+           userCommand === expectedCommandWithSudo ||
+           userCommandWithoutSudo === expectedCommand ||
+           expectedCommand.includes(userCommandWithoutSudo.split(' ')[0]));
 
     // Always show output first
     if (stdout.trim()) console.log(chalk.white(stdout.trim()));
@@ -546,7 +574,8 @@ function handleInput(input) {
     } else {
       const strictMatch = task.strictCommandMatch === true;
       if (strictMatch) {
-        console.log(chalk.red(`❌ That’s not the expected command. This task requires: ${chalk.bold(task.expectedCommand)}`));
+        const expectedCmd = maybeAddSudo(task.expectedCommand, task);
+        console.log(chalk.red(`❌ That's not the expected command. This task requires: ${chalk.bold(expectedCmd)}`));
         console.log(chalk.gray("💡 Try typing 'show' to reveal the correct command."));
       }
       rl.prompt();

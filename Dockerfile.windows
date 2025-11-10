@@ -1,0 +1,37 @@
+# Dockerfile for testing npm-practice on Windows
+# Note: This requires Docker Desktop with Windows containers enabled
+FROM mcr.microsoft.com/windows/servercore:ltsc2022
+
+# Install Node.js using PowerShell
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+
+# Download and install Node.js
+RUN Invoke-WebRequest -Uri 'https://nodejs.org/dist/v20.10.0/node-v20.10.0-x64.msi' -OutFile 'nodejs.msi'; \
+    Start-Process msiexec.exe -ArgumentList '/i', 'nodejs.msi', '/quiet', '/norestart' -Wait; \
+    Remove-Item 'nodejs.msi'
+
+# Add Node to PATH
+RUN setx /M PATH $($Env:PATH + ';C:\Program Files\nodejs')
+
+# Set working directory
+WORKDIR C:\\app
+
+# Configure npm with relaxed SSL and increased timeouts
+RUN npm config set strict-ssl false; \
+    npm config set fetch-timeout 60000; \
+    npm config set fetch-retry-maxtimeout 120000
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy all project files
+COPY . .
+
+# Set up test workspace
+WORKDIR C:\\test-workspace
+
+# Default command: open PowerShell for interactive testing
+CMD ["powershell"]

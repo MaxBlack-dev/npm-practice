@@ -91,6 +91,15 @@ function validate(command) {
     }
 }
 
+// Helper function to add sudo on Linux for commands that require it
+function maybeAddSudo(command, task, useBeforeFlag = false) {
+    const needsSudo = useBeforeFlag ? task.beforeRequiresSudo : task.requireSudo;
+    if (process.platform === 'linux' && needsSudo) {
+        return `sudo ${command}`;
+    }
+    return command;
+}
+
 function setup() {
     console.log('\n🔧 Setting up test environment...');
     
@@ -129,15 +138,19 @@ async function runTests() {
     setup();
 
     // Allow running specific range of tests via command line args
-    // Usage: node test-cli.js [start] [end]
+    // Usage: node test-cli.js [start] [end] [--interactive]
+    // --interactive flag enables user input prompts (old behavior)
     const args = process.argv.slice(2);
-    const startTask = args[0] ? parseInt(args[0]) - 1 : 0;
-    const endTask = args[1] ? parseInt(args[1]) : tasks.length;
+    const interactiveMode = args.includes('--interactive');
+    const numericArgs = args.filter(arg => !arg.startsWith('--'));
+    const startTask = numericArgs[0] ? parseInt(numericArgs[0]) - 1 : 0;
+    const endTask = numericArgs[1] ? parseInt(numericArgs[1]) : tasks.length;
     
     const tasksToRun = tasks.slice(startTask, endTask);
     
     console.log('\n🧪 Running tasks from tasks.json...\n');
-    if (args.length > 0) {
+    console.log(`Mode: ${interactiveMode ? '🙋 INTERACTIVE (with user prompts)' : '🤖 AUTOMATED (skip user input tasks)'}\n`);
+    if (numericArgs.length > 0) {
         console.log(`Running tasks ${startTask + 1} to ${endTask} (${tasksToRun.length} tasks)\n`);
     } else {
         console.log(`Total tasks: ${tasks.length}\n`);
@@ -161,6 +174,21 @@ async function runTests() {
             continue;
         }
         
+        // Skip sqlite3 tasks (28-29) on Linux due to SSL certificate issues with node-gyp
+        if (process.platform === 'linux' && (taskNum === 28 || taskNum === 29)) {
+            console.log(`⏭️  SKIPPED: Native module compilation has SSL certificate issues on Linux`);
+            skippedCount++;
+            continue;
+        }
+        
+        // In automated mode, skip tasks marked with skipTest flag
+        if (!interactiveMode && task.skipTest) {
+            console.log(`\n⚠️  SKIPPED: Task requires authentication or user input (use --interactive to run)`);
+            console.log(`📝 Command would be: ${task.expectedCommand}`);
+            skippedCount++;
+            continue;
+        }
+        
         // Special handling for Task 46 (npm login) - ensure registry points to official npm
         // This prevents issues when running tests after Verdaccio tasks that change the registry
         if (taskNum === 46) {
@@ -170,33 +198,12 @@ async function runTests() {
         
         let taskPassed = true;
         
-        // Check if this task requires user input
-        if (task.requiresUserInput) {
-            console.log(`\n⚠️  This task requires USER INPUT`);
-            console.log(`📝 Please interact with the terminal to complete this command`);
-            console.log(`▶️  Command: ${task.expectedCommand}`);
-            console.log(`\nPress Enter when you're ready to run this command...`);
-            
-            // Wait for user to press Enter
-            const readline = require('readline');
-            const rl = readline.createInterface({
-                input: process.stdin,
-                output: process.stdout
-            });
-            
-            await new Promise((resolve) => {
-                rl.question('', () => {
-                    rl.close();
-                    resolve();
-                });
-            });
-        }
-        
         try {
             // Run beforeCommand if defined (setup must happen before pre-check)
             if (task.beforeCommand) {
-                console.log(`� Setup: ${task.beforeCommand}`);
-                const beforeResult = runCommand(task.beforeCommand);
+                const beforeCmd = maybeAddSudo(task.beforeCommand, task, true);
+                console.log(`🔧 Setup: ${beforeCmd}`);
+                const beforeResult = runCommand(beforeCmd);
                 if (!beforeResult.success) {
                     console.log(`⚠️  Before command failed: ${beforeResult.error}`);
                 }
@@ -215,30 +222,18 @@ async function runTests() {
             }
             
             // Run the main command
-            console.log(`▶️  Command: ${task.expectedCommand}`);
+            let commandToRun = task.expectedCommand;
             
-            let result;
-            if (task.requiresUserInput) {
-                // Use spawn for interactive commands so user can interact
-                console.log(`\n🔄 Running interactive command...`);
-                const { spawnSync } = require('child_process');
-                const spawnResult = spawnSync(task.expectedCommand, {
-                    stdio: 'inherit', // This allows user to interact with the terminal
-                    shell: true,
-                    cwd: process.cwd(),
-                    timeout: 120000 // 2 minutes for user input
-                });
-                
-                result = {
-                    success: spawnResult.status === 0,
-                    output: '', // No output captured with inherit
-                    error: spawnResult.status !== 0 ? `Exit code: ${spawnResult.status}` : null,
-                    exitCode: spawnResult.status
-                };
+            // On Linux, prepend sudo for commands that require it
+            if (process.platform === 'linux' && task.requireSudo) {
+                commandToRun = `sudo ${commandToRun}`;
+                console.log(`▶️  Command: ${commandToRun} (sudo required on Linux)`);
             } else {
-                // Run normally
-                result = runCommand(task.expectedCommand);
+                console.log(`▶️  Command: ${commandToRun}`);
             }
+            
+            // Run normally (interactive tasks are skipped earlier)
+            const result = runCommand(commandToRun);
             
             const nonZeroOkay = task.nonZeroOkay === true;
             
@@ -253,7 +248,7 @@ async function runTests() {
             }
             
             // Validate outputIncludes if defined
-            if (taskPassed && task.outputIncludes !== undefined && !task.requiresUserInput) {
+            if (taskPassed && task.outputIncludes !== undefined) {
                 const output = result.output + result.error;
                 const expectedOutput = task.outputIncludes;
                 
@@ -267,17 +262,19 @@ async function runTests() {
                 } else {
                     console.log(`✅ Output validation passed`);
                 }
-            } else if (taskPassed && task.outputIncludes !== undefined && task.requiresUserInput) {
-                console.log(`ℹ️  Output validation skipped for interactive command`);
             } else if (taskPassed && task.isBrowserCommand === true) {
                 // Browser commands just need to succeed, no output validation
                 console.log(`✅ Browser command executed successfully`);
             }
             
-            // Validate checkCommand if defined
-            if (taskPassed && task.checkCommand) {
-                console.log(`🔍 Validation: ${task.checkCommand}`);
-                const checkPassed = validate(task.checkCommand);
+            // Validate checkCommand if defined (use windowsCheckCommand on Windows)
+            const checkCommandToUse = process.platform === 'win32' && task.windowsCheckCommand 
+                ? task.windowsCheckCommand 
+                : task.checkCommand;
+            
+            if (taskPassed && checkCommandToUse) {
+                console.log(`🔍 Validation: ${checkCommandToUse}`);
+                const checkPassed = validate(checkCommandToUse);
                 if (!checkPassed) {
                     console.log(`❌ Check command failed`);
                     taskPassed = false;

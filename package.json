@@ -5,7 +5,13 @@
   "main": "index.js",
   "scripts": {
     "test": "node test-cli.js",
-    "test-first-100": "node test-cli.js -- 1 100"
+    "test-first-100": "node test-cli.js -- 1 100",
+    "test-interactive": "node test-cli.js --interactive",
+    "test-first-100-interactive": "node test-cli.js -- 1 100 --interactive",
+    "test-linux": "./test-linux-auto.sh",
+    "test-linux-quick": "./test-linux-auto.sh 2>&1 | tail -25",
+    "build-docker": "docker build -f Dockerfile.linux -t npm-practice-linux .",
+    "run-docker": "docker run -it --rm npm-practice-linux"
   },
   "keywords": [
     "npm",

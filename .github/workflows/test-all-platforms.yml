@@ -1,0 +1,126 @@
+name: Test All Platforms
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  test-mac:
+    name: Test on macOS
+    runs-on: macos-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Run tests
+        run: npm test
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-mac
+          path: |
+            test-environment/
+            *.log
+
+  test-linux:
+    name: Test on Linux (Docker)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Build Linux Docker image
+        run: docker build -f Dockerfile.linux -t npm-practice-linux .
+      
+      - name: Run tests in Docker
+        run: |
+          docker run --rm npm-practice-linux bash -c "cd /home/tester/npm-practice-source && node test-cli.js"
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-linux
+          path: |
+            test-environment/
+            *.log
+
+  test-windows:
+    name: Test on Windows (Docker)
+    runs-on: windows-latest
+    timeout-minutes: 20
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Switch to Windows containers
+        run: |
+          & "C:\Program Files\Docker\Docker\DockerCli.exe" -SwitchWindowsEngine
+        continue-on-error: true
+      
+      - name: Build Windows Docker image
+        run: docker build -f Dockerfile.windows -t npm-practice-windows .
+      
+      - name: Run tests in Docker
+        run: |
+          docker run --rm npm-practice-windows powershell -Command "cd C:\npm-practice-source; node test-cli.js"
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-windows
+          path: |
+            test-environment/
+            *.log
+
+  summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [test-mac, test-linux, test-windows]
+    if: always()
+    
+    steps:
+      - name: Check test results
+        run: |
+          echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| macOS | ${{ needs.test-mac.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Linux | ${{ needs.test-linux.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Windows | ${{ needs.test-windows.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,41 @@
+name: Quick Test
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - '**.js'
+      - '**.json'
+      - 'test-cli.js'
+      - 'index.js'
+      - 'tasks.json'
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  quick-test:
+    name: Quick Test (macOS)
+    runs-on: macos-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run automated tests
+        run: npm test
+      
+      - name: Show test summary
+        if: always()
+        run: |
+          echo "✅ Tests completed on macOS"
+          echo "This is a quick validation. Full platform tests run separately."
