@@ -22,6 +22,14 @@ function initializeAI() {
     const apiKey = fs.readFileSync(API_KEY_FILE, 'utf8').trim();
     genAI = new GoogleGenerativeAI(apiKey);
     model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    
+    // Log initialization (only in debug mode)
+    if (process.env.DEBUG_AI) {
+      const timestamp = new Date().toISOString();
+      const logFile = path.join(CONFIG_DIR, 'ai-usage.log');
+      fs.appendFileSync(logFile, `${timestamp} - AI initialized\n`);
+    }
+    
     return true;
   } catch (error) {
     console.error('Failed to initialize AI:', error.message);
@@ -32,6 +40,13 @@ function initializeAI() {
 async function askAI(question, currentTask = null) {
   if (!model && !initializeAI()) {
     return 'AI is not configured. Please run the setup script first.';
+  }
+  
+  // Log AI usage
+  if (process.env.DEBUG_AI) {
+    const timestamp = new Date().toISOString();
+    const logFile = path.join(CONFIG_DIR, 'ai-usage.log');
+    fs.appendFileSync(logFile, `${timestamp} - AI request: "${question.substring(0, 50)}..."\n`);
   }
   
   try {

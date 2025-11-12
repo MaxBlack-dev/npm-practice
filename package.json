@@ -4,10 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node test-cli.js",
+    "test": "node run-all-tests.js",
+    "test-all": "node run-all-tests.js",
     "test-first-100": "node test-cli.js -- 1 100",
     "test-interactive": "node test-cli.js --interactive",
     "test-first-100-interactive": "node test-cli.js -- 1 100 --interactive",
+    "test-env-issue": "node test-env-issue-detection.js",
+    "test-special-commands": "node test-special-commands.js",
     "test-linux": "./test-linux-auto.sh",
     "test-linux-quick": "./test-linux-auto.sh 2>&1 | tail -25",
     "build-docker": "docker build -f Dockerfile.linux -t npm-practice-linux .",
@@ -57,7 +60,9 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "body-parser": "^2.2.0",
     "chalk": "^4.1.2",
+    "express": "^5.1.0",
     "inquirer": "^12.9.6",
     "lodash": "^4.17.21"
   }
