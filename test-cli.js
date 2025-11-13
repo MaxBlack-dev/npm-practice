@@ -200,25 +200,37 @@ async function runTests() {
         
         try {
             // Run beforeCommand if defined (setup must happen before pre-check)
-            if (task.beforeCommand) {
-                const beforeCmd = maybeAddSudo(task.beforeCommand, task, true);
-                console.log(`🔧 Setup: ${beforeCmd}`);
-                const beforeResult = runCommand(beforeCmd);
-                if (!beforeResult.success) {
-                    console.log(`⚠️  Before command failed: ${beforeResult.error}`);
+            if (task.beforeCommand || task.windowsBeforeCommand) {
+                const beforeCommandToUse = process.platform === 'win32' && task.windowsBeforeCommand
+                    ? task.windowsBeforeCommand
+                    : task.beforeCommand;
+                    
+                if (beforeCommandToUse) {
+                    const beforeCmd = maybeAddSudo(beforeCommandToUse, task, true);
+                    console.log(`🔧 Setup: ${beforeCmd}`);
+                    const beforeResult = runCommand(beforeCmd);
+                    if (!beforeResult.success) {
+                        console.log(`⚠️  Before command failed: ${beforeResult.error}`);
+                    }
                 }
             }
             
             // Run preCheckCommand if defined (after setup)
-            if (task.preCheckCommand) {
-                console.log(`� Pre-check: ${task.preCheckCommand}`);
-                const preCheckPassed = validate(task.preCheckCommand);
-                if (!preCheckPassed) {
-                    console.log(`⚠️  Pre-check failed, skipping task`);
-                    skippedCount++;
-                    continue;
+            if (task.preCheckCommand || task.windowsPreCheckCommand) {
+                const preCheckCommandToUse = process.platform === 'win32' && task.windowsPreCheckCommand
+                    ? task.windowsPreCheckCommand
+                    : task.preCheckCommand;
+                    
+                if (preCheckCommandToUse) {
+                    console.log(`🔍 Pre-check: ${preCheckCommandToUse}`);
+                    const preCheckPassed = validate(preCheckCommandToUse);
+                    if (!preCheckPassed) {
+                        console.log(`⚠️  Pre-check failed, skipping task`);
+                        skippedCount++;
+                        continue;
+                    }
+                    console.log(`✅ Pre-check passed`);
                 }
-                console.log(`✅ Pre-check passed`);
             }
             
             // Run the main command
@@ -283,10 +295,15 @@ async function runTests() {
                 }
             }
             
-            // Run afterCommand if defined
-            if (task.afterCommand) {
-                console.log(`🧹 Cleanup: ${task.afterCommand}`);
-                const afterResult = runCommand(task.afterCommand);
+            // Run afterCommand if defined (use windowsAfterCommand on Windows)
+            const afterCommandToUse = process.platform === 'win32' && task.windowsAfterCommand
+                ? task.windowsAfterCommand
+                : task.afterCommand;
+                
+            if (afterCommandToUse) {
+                const afterCmd = maybeAddSudo(afterCommandToUse, task);
+                console.log(`🧹 Cleanup: ${afterCmd}`);
+                const afterResult = runCommand(afterCmd);
                 if (!afterResult.success) {
                     console.log(`⚠️  After command failed: ${afterResult.error}`);
                 }

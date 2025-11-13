@@ -15,24 +15,28 @@
     "description": "Install the lodash package into your project.",
     "expectedCommand": "npm install lodash",
     "checkCommand": "npm list lodash | grep -q 'lodash'",
+    "windowsCheckCommand": "npm list lodash | findstr /C:\"lodash\"",
     "explanation": "Installs the lodash package and adds it to your dependencies in package.json."
   },
   {
     "description": "Install the axios package into your project.",
     "expectedCommand": "npm install axios",
     "checkCommand": "npm list axios | grep -q 'axios'",
+    "windowsCheckCommand": "npm list axios | findstr /C:\"axios\"",
     "explanation": "Installs the axios package and adds it to your dependencies in package.json."
   },
   {
     "description": "Uninstall the lodash package from your project.",
     "expectedCommand": "npm uninstall lodash",
     "checkCommand": "! npm list lodash | grep -q 'lodash'",
+    "windowsCheckCommand": "npm list lodash | findstr /C:\"lodash\" || exit 0",
     "explanation": "Removes the lodash package from node_modules and deletes it from package.json dependencies."
   },
   {
     "description": "Bump the version of your project using npm. Try increasing it with a patch update.",
     "expectedCommand": "npm version patch",
     "checkCommand": "grep -q '\"version\": \"1.0.1\"' package.json",
+    "windowsCheckCommand": "findstr /C:\"\\\"version\\\": \\\"1.0.1\\\"\" package.json",
     "explanation": "Increments the version field in package.json using semantic versioning (patch level)."
   },
   {
@@ -44,22 +48,29 @@
     "description": "Reinstall project dependencies cleanly using lockfile.",
     "expectedCommand": "npm ci",
     "beforeCommand": "rm -rf node_modules",
+    "windowsBeforeCommand": "if exist node_modules (rmdir /s /q node_modules)",
     "preCheckCommand": "test ! -d node_modules && test -f package-lock.json",
+    "windowsPreCheckCommand": "if not exist node_modules (if exist package-lock.json (exit 0) else (exit 1)) else (exit 1)",
     "checkCommand": "npm list axios | grep -q 'axios' && test -d node_modules && test package-lock.json -ot node_modules",
+    "windowsCheckCommand": "npm list axios | findstr /C:\"axios\" && if exist node_modules (exit 0) else (exit 1)",
     "explanation": "Performs a clean install of dependencies based on package-lock.json, removing node_modules first."
   },
   {
     "description": "Verify the integrity of the npm cache.",
     "expectedCommand": "npm cache verify",
     "beforeCommand": "mkdir -p ~/.npm/_cacache/tmp && touch ~/.npm/_cacache/tmp/fake.tar.gz",
+    "windowsBeforeCommand": "if not exist %APPDATA%\\npm-cache\\_cacache\\tmp (mkdir %APPDATA%\\npm-cache\\_cacache\\tmp) && echo. > %APPDATA%\\npm-cache\\_cacache\\tmp\\fake.tar.gz",
     "preCheckCommand": "test -f ~/.npm/_cacache/tmp/fake.tar.gz",
+    "windowsPreCheckCommand": "if exist %APPDATA%\\npm-cache\\_cacache\\tmp\\fake.tar.gz (exit 0) else (exit 1)",
     "checkCommand": "test ! -f ~/.npm/_cacache/tmp/fake.tar.gz",
+    "windowsCheckCommand": "if not exist %APPDATA%\\npm-cache\\_cacache\\tmp\\fake.tar.gz (exit 0) else (exit 1)",
     "explanation": "Checks and cleans the npm cache to ensure it's valid and not corrupted."
   },
   {
     "description": "Install the lodash package into node_modules without saving it to package.json.",
     "expectedCommand": "npm install lodash --no-save",
     "checkCommand": "test -d node_modules/lodash && ! grep -q 'lodash' package.json",
+    "windowsCheckCommand": "if exist node_modules\\lodash (findstr /C:\"lodash\" package.json || exit 0) else (exit 1)",
     "explanation": "Installs lodash temporarily into node_modules without adding it to package.json dependencies."
   },
   {
@@ -71,6 +82,7 @@
     "description": "Remove extraneous packages from node_modules.",
     "expectedCommand": "npm prune",
     "checkCommand": "! test -d node_modules/lodash && test -d node_modules/axios",
+    "windowsCheckCommand": "if not exist node_modules\\lodash (if exist node_modules\\axios (exit 0) else (exit 1)) else (exit 1)",
     "explanation": "Deletes packages from node_modules that are not listed in package.json."
   },
   {
@@ -82,6 +94,7 @@
     "description": "Install express version 5.1.0 and body-parser version 2.2.0 to create a duplicate dependency scenario.",
     "expectedCommand": "npm install express@5.1.0 body-parser@2.2.0",
     "checkCommand": "npm list express | grep -q 'express@5.1.0' && npm list body-parser | grep -q 'body-parser@2.2.0' && npm ls statuses | grep -q 'statuses@'",
+    "windowsCheckCommand": "npm list express | findstr /C:\"express@5.1.0\" && npm list body-parser | findstr /C:\"body-parser@2.2.0\" && npm ls statuses | findstr /C:\"statuses@\"",
     "explanation": "Installs two packages that depend on different versions of 'statuses', creating a duplicate in the tree."
   },
   {
@@ -99,6 +112,7 @@
     "description": "Deduplicate your dependency tree to flatten duplicate packages.",
     "expectedCommand": "npm dedupe",
     "checkCommand": "! npm ls statuses | grep -q 'statuses@2.0.2'",
+    "windowsCheckCommand": "npm ls statuses | findstr /C:\"statuses@2.0.2\" || exit 0",
     "explanation": "Attempts to flatten the dependency tree by hoisting shared packages like 'statuses'."
   },
   {
@@ -116,6 +130,7 @@
     "description": "Install the chalk package version 4.1.1 into your project.",
     "expectedCommand": "npm install chalk@4.1.1",
     "checkCommand": "npm list chalk | grep -q 'chalk@4.1.1'",
+    "windowsCheckCommand": "npm list chalk | findstr /C:\"chalk@4.1.1\"",
     "explanation": "Installs the chalk package version 4.1.1 and adds it to your dependencies in package.json."
   },
   {
@@ -129,6 +144,7 @@
     "description": "Update all outdated packages in your project.",
     "expectedCommand": "npm update",
     "checkCommand": "npm list chalk | grep -q 'chalk@' && ! npm list chalk | grep -q 'chalk@4.1.1'",
+    "windowsCheckCommand": "npm list chalk | findstr /C:\"chalk@\" && (npm list chalk | findstr /C:\"chalk@4.1.1\" || exit 0)",
     "explanation": "Updates all dependencies in package.json to their latest compatible versions."
   },
   {
@@ -140,6 +156,7 @@
     "description": "Install the latest chalk package into your project.",
     "expectedCommand": "npm install chalk@latest",
     "checkCommand": "npm list chalk | grep -q 'chalk@' && ! npm list chalk | grep -q 'chalk@4.1.2' && test $(npm outdated | wc -l) -eq 0",
+    "windowsCheckCommand": "npm list chalk | findstr /C:\"chalk@\" && (npm list chalk | findstr /C:\"chalk@4.1.2\" || (npm outdated 2>nul | find /c /v \"\") || exit 0)",
     "explanation": "Installs the chalk package latest version and adds it to your dependencies in package.json."
   },
   {
@@ -161,6 +178,7 @@
     "description": "Install the native module 'sqlite3' to prepare for a rebuild scenario.",
     "expectedCommand": "npm install sqlite3",
     "checkCommand": "test -d node_modules/sqlite3",
+    "windowsCheckCommand": "if exist node_modules\\sqlite3 (exit 0) else (exit 1)",
     "outputIncludes": "added",
     "explanation": "Installs a native Node.js module that compiles binary bindings during install. We'll simulate a broken build next."
   },
@@ -168,8 +186,11 @@
     "description": "Rebuild the native module 'sqlite3' after simulating a broken build.",
     "expectedCommand": "npm rebuild",
     "beforeCommand": "rm -rf node_modules/sqlite3/build/Release",
+    "windowsBeforeCommand": "if exist node_modules\\sqlite3\\build\\Release (rmdir /s /q node_modules\\sqlite3\\build\\Release)",
     "preCheckCommand": "test ! -f node_modules/sqlite3/build/Release/*.node",
+    "windowsPreCheckCommand": "if not exist node_modules\\sqlite3\\build\\Release\\*.node (exit 0) else (exit 1)",
     "checkCommand": "test -f node_modules/sqlite3/build/Release/*.node",
+    "windowsCheckCommand": "if exist node_modules\\sqlite3\\build\\Release\\*.node (exit 0) else (exit 1)",
     "outputIncludes": "rebuilt dependencies successfully",
     "explanation": "Recompiles native bindings for 'sqlite3', restoring the missing binary after we deleted it."
   },
@@ -179,6 +200,7 @@
     "beforeCommand": "npm install -g npm@11.6.1",
     "beforeRequiresSudo": true,
     "preCheckCommand": "npm -v | grep -q '^11\\.6\\.1$'",
+    "windowsPreCheckCommand": "npm -v | findstr /R \"^11\\.6\\.1$\"",
     "outputIncludes": "Use npm v",
     "nonZeroOkay": true,
     "explanation": "Runs a set of checks to identify potential issues in your npm and Node.js setup."
@@ -187,6 +209,7 @@
     "description": "Upgrade npm to the latest version to resolve the issue.",
     "expectedCommand": "npm install -g npm@latest",
     "checkCommand": "! npm -v | grep -q '^11\\.6\\.1$' && npm doctor | awk '/Checking npm version/{getline; print}' | grep -q '^Ok$'",
+    "windowsCheckCommand": "(npm -v | findstr /R \"^11\\.6\\.1$\" || exit 0) && npm doctor 2>&1 | findstr /C:\"Checking npm version\" >nul",
     "requireSudo": true,
     "explanation": "Upgrades npm to the latest version so that npm doctor no longer reports it as outdated."
   },
@@ -201,7 +224,9 @@
     "description": "Lock down your dependencies using shrinkwrap.",
     "expectedCommand": "npm shrinkwrap",
     "checkCommand": "test -f npm-shrinkwrap.json",
+    "windowsCheckCommand": "if exist npm-shrinkwrap.json (exit 0) else (exit 1)",
     "afterCommand": "rm npm-shrinkwrap.json",
+    "windowsAfterCommand": "if exist npm-shrinkwrap.json (del npm-shrinkwrap.json)",
     "explanation": "Generates a npm-shrinkwrap.json file to lock exact versions of dependencies for reproducible installs."
   },
   {
@@ -213,6 +238,7 @@
     "description": "Install lodash version 4.17.11 which has known vulnerabilities.",
     "expectedCommand": "npm install lodash@4.17.11",
     "checkCommand": "npm list lodash | grep -q 'lodash@4.17.11'",
+    "windowsCheckCommand": "npm list lodash | findstr /C:\"lodash@4.17.11\"",
     "explanation": "Installs an older version of lodash that is known to have security issues for testing npm audit."
   },
   {
@@ -226,6 +252,7 @@
     "description": "Fix the vulnerability using npm's automated tool.",
     "expectedCommand": "npm audit fix",
     "checkCommand": "! npm audit | grep -q '1 critical severity vulnerability'",
+    "windowsCheckCommand": "npm audit | findstr /C:\"1 critical severity vulnerability\" || exit 0",
     "outputIncludes": "found 0 vulnerabilities",
     "explanation": "Runs npm's built-in fix tool to resolve known vulnerabilities automatically."
   },
@@ -250,14 +277,17 @@
     "description": "Create a tarball of your package for publishing.",
     "expectedCommand": "npm pack",
     "checkCommand": "ls my-npm-project-*.tgz | grep -q '.tgz'",
+    "windowsCheckCommand": "dir my-npm-project-*.tgz 2>nul | findstr /C:\".tgz\"",
     "outputIncludes": ".tgz",
     "afterCommand": "rm my-npm-project-*.tgz",
+    "windowsAfterCommand": "del my-npm-project-*.tgz 2>nul",
     "explanation": "Generates a compressed archive of your package, simulating what would be published to npm."
   },
   {
     "description": "Symlink your local package for development.",
     "expectedCommand": "npm link",
     "checkCommand": "npm ls -g | grep -q 'my-npm-project@'",
+    "windowsCheckCommand": "npm ls -g | findstr /C:\"my-npm-project@\"",
     "requireSudo": true,
     "explanation": "Creates a global symlink to your package, useful for testing CLI tools or shared modules."
   },
@@ -270,6 +300,7 @@
     "description": "Remove the global symlink to your package.",
     "expectedCommand": "npm unlink -g my-npm-project",
     "checkCommand": "! npm ls -g | grep -q 'my-npm-project@'",
+    "windowsCheckCommand": "npm ls -g | findstr /C:\"my-npm-project@\" || exit 0",
     "outputIncludes": "removed",
     "requireSudo": true,
     "explanation": "Unlinks your package from the global registry, cleaning up your development environment."
@@ -283,6 +314,7 @@
     "description": "Log in to your npm account.",
     "expectedCommand": "npm login",
     "checkCommand": "npm whoami | grep -q '.'",
+    "windowsCheckCommand": "npm whoami 2>nul | findstr /R \".\"",
     "outputIncludes": "Logged in",
     "requiresUserInput": true,
     "skipTest": true,
@@ -298,6 +330,7 @@
     "description": "Log out of your npm account.",
     "expectedCommand": "npm logout",
     "checkCommand": "! npm whoami 2>/dev/null",
+    "windowsCheckCommand": "npm whoami 2>nul || exit 0",
     "skipTest": true,
     "explanation": "Removes your authentication token and ends your npm session."
   },
@@ -305,6 +338,7 @@
     "description": "Install Verdaccio globally to create a local npm registry.",
     "expectedCommand": "npm install -g verdaccio",
     "checkCommand": "verdaccio --version",
+    "windowsCheckCommand": "verdaccio --version",
     "requireSudo": true,
     "explanation": "Verdaccio is a lightweight local npm registry. Installing it lets you publish and test packages privately."
   },
@@ -312,6 +346,7 @@
     "description": "Point npm to your local registry at http://localhost:4873.",
     "expectedCommand": "npm set registry http://localhost:4873",
     "checkCommand": "npm config get registry | grep -q 'localhost:4873'",
+    "windowsCheckCommand": "npm config get registry | findstr /C:\"localhost:4873\"",
     "explanation": "This tells npm to use your local registry instead of the public one."
   },
   {
@@ -325,7 +360,9 @@
     "expectedCommand": "npm adduser --registry http://localhost:4873",
     "beforeCommand": "lsof -ti :4873 | xargs kill 2>/dev/null || true && sleep 2 && rm -rf ~/.config/verdaccio && mkdir -p ~/.config/verdaccio && cat > ~/.config/verdaccio/config.yaml << 'EOF'\nstorage: ./storage\nauth:\n  htpasswd:\n    file: ./htpasswd\nuplinks:\n  npmjs:\n    url: https://registry.npmjs.org/\n    timeout: 1s\n    max_fails: 1\n    fail_timeout: 1s\npackages:\n  '**':\n    access: $all\n    publish: $authenticated\n    unpublish: $authenticated\nlogs: { type: stdout, format: pretty, level: warn }\nEOF\nverdaccio --listen 0.0.0.0:4873 > verdaccio.log 2>&1 & i=1; while [ $i -le 20 ]; do sleep 1; curl -s http://localhost:4873 >/dev/null 2>&1 && curl -s http://localhost:4873 | grep -q 'Verdaccio' && break; if [ $i -eq 20 ]; then echo 'Verdaccio failed to start'; exit 1; fi; i=$((i + 1)); done && sleep 2",
     "preCheckCommand": "curl -s http://localhost:4873 | grep -q 'Verdaccio'",
+    "windowsPreCheckCommand": "curl -s http://localhost:4873 2>nul | findstr /C:\"Verdaccio\"",
     "checkCommand": "npm whoami --registry http://localhost:4873 | grep -q '.'",
+    "windowsCheckCommand": "npm whoami --registry http://localhost:4873 2>nul | findstr /R \".\"",
     "outputIncludes": "Logged in",
     "requiresUserInput": true,
     "skipTest": true,
@@ -335,8 +372,10 @@
     "description": "Publish your package to the local registry.",
     "expectedCommand": "npm publish",
     "preCheckCommand": "curl -s http://localhost:4873 | grep -q 'Verdaccio'",
+    "windowsPreCheckCommand": "curl -s http://localhost:4873 2>nul | findstr /C:\"Verdaccio\"",
     "beforeCommand": "if ! curl -s http://localhost:4873 >/dev/null 2>&1; then nohup verdaccio --listen 0.0.0.0:4873 > verdaccio.log 2>&1 & sleep 3; fi",
     "checkCommand": "npm view my-npm-project --registry http://localhost:4873 | grep -q 'version'",
+    "windowsCheckCommand": "npm view my-npm-project --registry http://localhost:4873 2>nul | findstr /C:\"version\"",
     "outputIncludes": "my-npm-project",
     "skipTest": true,
     "explanation": "Publishes your package to the local registry. We ensure Verdaccio is running before publishing."
@@ -345,8 +384,10 @@
     "description": "Install your package from the local registry.",
     "expectedCommand": "npm install my-npm-project",
     "preCheckCommand": "curl -s http://localhost:4873 | grep -q 'Verdaccio'",
+    "windowsPreCheckCommand": "curl -s http://localhost:4873 2>nul | findstr /C:\"Verdaccio\"",
     "beforeCommand": "if ! curl -s http://localhost:4873 >/dev/null 2>&1; then nohup verdaccio --listen 0.0.0.0:4873 > verdaccio.log 2>&1 & sleep 3; fi",
     "checkCommand": "ls node_modules | grep -q 'my-npm-project'",
+    "windowsCheckCommand": "dir node_modules 2>nul | findstr /C:\"my-npm-project\"",
     "outputIncludes": "added",
     "skipTest": true,
     "explanation": "Installs your package from the local registry."
@@ -355,6 +396,7 @@
     "description": "Remove your my-npm-project package from current project.",
     "expectedCommand": "npm uninstall my-npm-project",
     "checkCommand": "! ls node_modules | grep -q 'my-npm-project'",
+    "windowsCheckCommand": "dir node_modules 2>nul | findstr /C:\"my-npm-project\" || exit 0",
     "outputIncludes": "removed",
     "skipTest": true,
     "explanation": "Removes your package from the current project."
@@ -363,8 +405,10 @@
     "description": "Deprecate a version of your package with a warning message.",
     "expectedCommand": "npm deprecate my-npm-project@1.0.1 \"Deprecated due to critical bug\"",
     "preCheckCommand": "curl -s http://localhost:4873 | grep -q 'Verdaccio'",
+    "windowsPreCheckCommand": "curl -s http://localhost:4873 2>nul | findstr /C:\"Verdaccio\"",
     "beforeCommand": "if ! curl -s http://localhost:4873 >/dev/null 2>&1; then nohup verdaccio --listen 0.0.0.0:4873 > verdaccio.log 2>&1 & sleep 3; fi",
     "checkCommand": "npm view my-npm-project@1.0.1 | grep -i 'deprecated'",
+    "windowsCheckCommand": "npm view my-npm-project@1.0.1 2>nul | findstr /I /C:\"deprecated\"",
     "outputIncludes": "npm notice deprecating",
     "skipTest": true,
     "explanation": "Marks a specific version of your package as deprecated, warning users who try to install it. We check for any deprecation notice, not a specific message."
@@ -373,8 +417,10 @@
     "description": "Remove the deprecation warning from your package version.",
     "expectedCommand": "npm undeprecate my-npm-project@1.0.1 ",
     "preCheckCommand": "curl -s http://localhost:4873 | grep -q 'Verdaccio'",
+    "windowsPreCheckCommand": "curl -s http://localhost:4873 2>nul | findstr /C:\"Verdaccio\"",
     "beforeCommand": "if ! curl -s http://localhost:4873 >/dev/null 2>&1; then nohup verdaccio --listen 0.0.0.0:4873 > verdaccio.log 2>&1 & sleep 3; fi",
     "checkCommand": "! npm view my-npm-project@1.0.1 | grep -i 'deprecated'",
+    "windowsCheckCommand": "npm view my-npm-project@1.0.1 2>nul | findstr /I /C:\"deprecated\" || exit 0",
     "outputIncludes": "npm notice undeprecating",
     "skipTest": true,
     "explanation": "Undeprecates a previously deprecated version by clearing the warning message."
@@ -383,8 +429,10 @@
     "description": "Remove your package from the local registry.",
     "expectedCommand": "npm unpublish --force",
     "preCheckCommand": "curl -s http://localhost:4873 | grep -q 'Verdaccio'",
+    "windowsPreCheckCommand": "curl -s http://localhost:4873 2>nul | findstr /C:\"Verdaccio\"",
     "beforeCommand": "if ! curl -s http://localhost:4873 >/dev/null 2>&1; then nohup verdaccio --listen 0.0.0.0:4873 > verdaccio.log 2>&1 & sleep 3; fi",
     "checkCommand": "! npm view my-npm-project --registry http://localhost:4873 | grep -q 'version'",
+    "windowsCheckCommand": "npm view my-npm-project --registry http://localhost:4873 2>nul | findstr /C:\"version\" || exit 0",
     "skipTest": true,
     "explanation": "Unpublishes your package from the local Verdaccio registry so it can be republished or removed completely."
   },
@@ -392,6 +440,7 @@
     "description": "Uninstall Verdaccio from your system.",
     "expectedCommand": "npm uninstall -g verdaccio",
     "checkCommand": "! command -v verdaccio",
+    "windowsCheckCommand": "where verdaccio 2>nul || exit 0",
     "afterCommand": "lsof -ti :4873 | xargs kill 2>/dev/null || true && rm -f verdaccio.log 2>/dev/null || true && rm -rf ~/.config/verdaccio ~/.local/share/verdaccio ~/.verdaccio 2>/dev/null || true",
     "requireSudo": true,
     "explanation": "Removes the Verdaccio CLI and clears its registry data so you can start fresh next time."
@@ -400,6 +449,7 @@
     "description": "Reset your npm registry to the official public registry https://registry.npmjs.org/",
     "expectedCommand": "npm set registry https://registry.npmjs.org/",
     "checkCommand": "npm config get registry | grep -q 'registry.npmjs.org'",
+    "windowsCheckCommand": "npm config get registry | findstr /C:\"registry.npmjs.org\"",
     "explanation": "Restores your npm configuration to use the official public registry. This ensures future installs and publishes go to npmjs.com."
   },
   {
@@ -434,6 +484,7 @@
     "strictCommandMatch": true,
     "requiresUserInput": true,
     "checkCommand": "npm whoami",
+    "windowsCheckCommand": "npm whoami 2>nul",
     "outputIncludes": "Logged in",
     "skipTest": true,
     "explanation": "Authenticates your npm account using legacy credentials. This is useful for older workflows or when MFA isn't required."
@@ -518,6 +569,7 @@
     "description": "Set VS Code as your editor for npm edit. You need to have VS Code installed and available in your PATH, you can download it from here https://code.visualstudio.com/.",
     "expectedCommand": "npm config set editor code",
     "checkCommand": "test -n \"$(npm config get editor)\"",
+    "windowsCheckCommand": "npm config get editor | findstr /R \".\"",
     "explanation": "Configures npm to use VS Code for editing packages. VS Code works perfectly with npm edit as it can open entire package folders. If you don't have VS Code installed, download it from https://code.visualstudio.com/ and make sure it's available in your PATH."
   },
   {
@@ -551,6 +603,7 @@
     "description": "Install the cowsay package to use in the next exercise.",
     "expectedCommand": "npm install cowsay",
     "checkCommand": "test -d node_modules/cowsay",
+    "windowsCheckCommand": "if exist node_modules\\cowsay (exit 0) else (exit 1)",
     "explanation": "Installs the cowsay package which provides a fun command-line utility for displaying messages."
   },
   {
@@ -569,6 +622,7 @@
     "description": "Set a start script in your package.json to echo 'Running application...'",
     "expectedCommand": "npm pkg set scripts.start=\"echo 'Running application...'\"",
     "checkCommand": "grep -q '\"scripts\"' package.json && grep -q '\"start\": \"echo' package.json",
+    "windowsCheckCommand": "findstr /C:\"\\\"scripts\\\"\" package.json && findstr /C:\"\\\"start\\\"\" package.json",
     "explanation": "Adds or updates the start script in package.json using npm's pkg command to set a simple echo command."
   },
   {
@@ -592,6 +646,7 @@
     "description": "Set a test script in your package.json to echo 'All tests passed!'",
     "expectedCommand": "npm pkg set scripts.test=\"echo 'All tests passed!'\"",
     "checkCommand": "grep -q '\"test\": \"echo .All' package.json",
+    "windowsCheckCommand": "findstr /C:\"\\\"test\\\"\" package.json && findstr /C:\"All tests passed\" package.json",
     "explanation": "Adds or updates the test script in package.json using npm's pkg command to set a simple echo command that simulates passing tests."
   },
   {
@@ -604,6 +659,7 @@
     "description": "Run tests defined in your package.json.",
     "expectedCommand": "npm test",
     "checkCommand": "grep -q 'test' package.json",
+    "windowsCheckCommand": "findstr /C:\"test\" package.json",
     "outputIncludes": "All tests passed",
     "explanation": "Executes the 'test' script from your package.json to run automated tests."
   },
@@ -611,6 +667,7 @@
     "description": "Set a stop script in your package.json to echo 'Application stopped.'",
     "expectedCommand": "npm pkg set scripts.stop=\"echo 'Application stopped.'\"",
     "checkCommand": "grep -q '\"stop\": \"echo' package.json",
+    "windowsCheckCommand": "findstr /C:\"\\\"stop\\\"\" package.json && findstr /C:\"Application stopped\" package.json",
     "explanation": "Adds or updates the stop script in package.json using npm's pkg command to set a simple echo command that simulates stopping an application."
   },
   {
@@ -629,6 +686,7 @@
     "description": "Set a restart script in your package.json to echo 'Application restarted.'",
     "expectedCommand": "npm pkg set scripts.restart=\"echo 'Application restarted.'\"",
     "checkCommand": "grep -q '\"restart\": \"echo' package.json",
+    "windowsCheckCommand": "findstr /C:\"\\\"restart\\\"\" package.json && findstr /C:\"Application restarted\" package.json",
     "explanation": "Adds or updates the restart script in package.json using npm's pkg command to set a simple echo command that simulates restarting an application."
   },
   {
@@ -641,6 +699,7 @@
     "description": "Restart your npm script by running the restart command.",
     "expectedCommand": "npm restart",
     "checkCommand": "grep -q 'restart' package.json",
+    "windowsCheckCommand": "findstr /C:\"restart\" package.json",
     "outputIncludes": "Application restarted",
     "explanation": "Executes the 'restart' script from your package.json to restart the application gracefully."
   },
