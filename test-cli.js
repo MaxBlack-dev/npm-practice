@@ -5,7 +5,6 @@ const path = require('path');
 const tasks = require('./tasks.json');
 const testRootDir = path.join(__dirname, 'test-environment');
 const testDir = path.join(testRootDir, 'my-npm-project');
-const progressFile = path.join(testRootDir, 'progress.json');
 
 let passedCount = 0;
 let failedCount = 0;
