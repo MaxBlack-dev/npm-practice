@@ -5,6 +5,7 @@ const path = require('path');
 const tasks = require('./tasks.json');
 const testRootDir = path.join(__dirname, 'test-environment');
 const testDir = path.join(testRootDir, 'my-npm-project');
+const isWindows = process.platform === 'win32';
 
 let passedCount = 0;
 let failedCount = 0;
@@ -39,13 +40,21 @@ function runCommand(command, options = {}) {
     
     // Use spawnSync to capture both stdout and stderr
     // npm writes notices and warnings to stderr even on success
-    const result = spawnSync('/bin/sh', ['-c', command], {
-        encoding: 'utf8',
-        cwd: options.cwd || process.cwd(),
-        timeout: options.timeout || timeout,
-        maxBuffer: 10 * 1024 * 1024, // 10MB buffer
-        shell: false, // We're already using /bin/sh
-    });
+    const result = isWindows 
+        ? spawnSync(command, {
+            encoding: 'utf8',
+            cwd: options.cwd || process.cwd(),
+            timeout: options.timeout || timeout,
+            maxBuffer: 10 * 1024 * 1024, // 10MB buffer
+            shell: true,
+        })
+        : spawnSync('/bin/sh', ['-c', command], {
+            encoding: 'utf8',
+            cwd: options.cwd || process.cwd(),
+            timeout: options.timeout || timeout,
+            maxBuffer: 10 * 1024 * 1024, // 10MB buffer
+            shell: false, // We're already using /bin/sh
+        });
     
     // Combine stdout and stderr since npm writes notices to stderr
     const stdout = result.stdout || '';
@@ -173,9 +182,23 @@ async function runTests() {
             continue;
         }
         
+        // Skip tasks that don't work on Windows
+        if (isWindows && task.doesntWorkOnWindows) {
+            console.log(`⏭️  SKIPPED: Task doesn't work on Windows`);
+            skippedCount++;
+            continue;
+        }
+        
         // Skip sqlite3 tasks (28-29) on Linux due to SSL certificate issues with node-gyp
         if (process.platform === 'linux' && (taskNum === 28 || taskNum === 29)) {
             console.log(`⏭️  SKIPPED: Native module compilation has SSL certificate issues on Linux`);
+            skippedCount++;
+            continue;
+        }
+        
+        // Skip browser commands and GUI editors on Linux (no display in Docker containers)
+        if (process.platform === 'linux' && (task.isBrowserCommand || task.requiresDisplay)) {
+            console.log(`⏭️  SKIPPED: Requires display - not available in headless environment`);
             skippedCount++;
             continue;
         }
@@ -233,7 +256,9 @@ async function runTests() {
             }
             
             // Run the main command
-            let commandToRun = task.expectedCommand;
+            let commandToRun = (isWindows && task.windowsExpectedCommand) 
+                ? task.windowsExpectedCommand 
+                : task.expectedCommand;
             
             // On Linux, prepend sudo for commands that require it
             if (process.platform === 'linux' && task.requireSudo) {
@@ -261,7 +286,9 @@ async function runTests() {
             // Validate outputIncludes if defined
             if (taskPassed && task.outputIncludes !== undefined) {
                 const output = result.output + result.error;
-                const expectedOutput = task.outputIncludes;
+                const expectedOutput = (isWindows && task.windowsOutputIncludes !== undefined)
+                    ? task.windowsOutputIncludes
+                    : task.outputIncludes;
                 
                 const outputValid = output.includes(expectedOutput);
                 

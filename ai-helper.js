@@ -21,7 +21,7 @@ function initializeAI() {
   try {
     const apiKey = fs.readFileSync(API_KEY_FILE, 'utf8').trim();
     genAI = new GoogleGenerativeAI(apiKey);
-    model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     
     // Log initialization (only in debug mode)
     if (process.env.DEBUG_AI) {

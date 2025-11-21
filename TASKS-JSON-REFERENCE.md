@@ -144,11 +144,20 @@ This document describes all available fields in `tasks.json` for defining npm le
 
 ### `doesntWork`
 - **Type**: `boolean`
-- **Description**: Command is known to be broken in current npm version
+- **Description**: Command is known to be broken in current npm version (all platforms)
 - **Example**: `true`
-- **Usage**: Documents known issues without failing tests
+- **Usage**: Task still shows in CLI (user can try it), but skipped in automated tests
 - **Default**: `false`
-- **Common Use Cases**: Deprecated or buggy npm commands
+- **Common Use Cases**: Deprecated or buggy npm commands (e.g., `npm stars`)
+
+### `doesntWorkOnWindows`
+- **Type**: `boolean`
+- **Description**: Command doesn't work on Windows but works on Linux/Mac
+- **Example**: `true`
+- **Usage**: Task shows normally in CLI on all platforms (user can try), but skipped in test suite on Windows only
+- **Default**: `false`
+- **Common Use Cases**: Unix-specific commands, Windows compatibility issues (e.g., `npm edit`)
+- **Note**: Paired with `nonZeroOkay: true` since command will fail on Windows
 
 ---
 

@@ -181,7 +181,8 @@ function handleInput(input) {
     const { execSync } = require('child_process');
     const url = lower === 'open' ? 'https://www.amazon.com/dp/B0FSX9TZZ1' : trimmed.slice(5).trim();
     try {
-      execSync(`open ${url}`, { stdio: 'ignore' });
+      const openCommand = process.platform === 'win32' ? 'start' : 'open';
+      execSync(`${openCommand} ${url}`, { stdio: 'ignore', shell: true });
       console.log(chalk.green("✓ Opening in browser..."));
     } catch (error) {
       console.log(chalk.red(`❌ Could not open URL: ${error.message}`));
