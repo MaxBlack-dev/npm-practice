@@ -9,13 +9,18 @@ const { saveProgress, loadProgress, initializeWorkspace } = require('./lib/utils
 const { handleReset, handleRetry, handleSkip, handleShow, handleExplain, handleGo } = require('./lib/commands');
 const { runBeforeCommand, runPreCheckCommand } = require('./lib/taskLifecycle');
 const { executeUserCommand, handleUserInputTask, handleCdCommand } = require('./lib/taskRunner');
+const { checkForUpdates } = require('./lib/updateChecker');
 
 const tasks = require('./tasks.json');
+const packageJson = require('./package.json');
 const progressFile = process.env.NPM_PRACTICE_PROGRESS_FILE || path.join(__dirname, 'progress.json');
 const projectFolder = path.join(process.cwd(), 'my-npm-project');
 
 // Initialize workspace
 initializeWorkspace(projectFolder);
+
+// Check for updates (non-blocking)
+checkForUpdates(packageJson.version);
 
 // Load progress
 const progress = loadProgress(progressFile, tasks.length);
