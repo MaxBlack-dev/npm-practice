@@ -97,7 +97,7 @@ jobs:
       
       - name: Run tests in Docker
         run: |
-          docker run --rm npm-practice-windows powershell -Command "cd C:\npm-practice-source; node test-cli.js"
+          docker run --rm npm-practice-windows powershell -Command "cd C:\app; node test-cli.js"
       
       - name: Upload test results
         if: always()

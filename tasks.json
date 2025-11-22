@@ -344,7 +344,7 @@
   },
   {
     "description": "Point npm to your local registry at http://localhost:4873.",
-    "expectedCommand": "npm set registry http://localhost:4873",
+    "expectedCommand": "npm config set registry http://localhost:4873",
     "checkCommand": "npm config get registry | grep -q 'localhost:4873'",
     "windowsCheckCommand": "npm config get registry | findstr /C:\"localhost:4873\"",
     "explanation": "This tells npm to use your local registry instead of the public one."
@@ -455,7 +455,7 @@
   },
   {
     "description": "Reset your npm registry to the official public registry https://registry.npmjs.org/",
-    "expectedCommand": "npm set registry https://registry.npmjs.org/",
+    "expectedCommand": "npm config set registry https://registry.npmjs.org/",
     "checkCommand": "npm config get registry | grep -q 'registry.npmjs.org'",
     "windowsCheckCommand": "npm config get registry | findstr /C:\"registry.npmjs.org\"",
     "explanation": "Restores your npm configuration to use the official public registry. This ensures future installs and publishes go to npmjs.com."
