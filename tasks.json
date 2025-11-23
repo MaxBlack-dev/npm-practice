@@ -105,14 +105,12 @@
   {
     "description": "Detect duplicate versions of packages in your dependency tree.",
     "expectedCommand": "npm find-dupes",
-    "outputIncludes": "statuses",
-    "explanation": "Reports multiple versions of 'statuses' and suggests deduplication."
+    "explanation": "Reports multiple versions of packages and suggests deduplication. Note: Modern npm (v7+) auto-dedupes during install, so this may show no duplicates."
   },
   {
     "description": "Deduplicate your dependency tree to flatten duplicate packages.",
     "expectedCommand": "npm dedupe",
-    "checkCommand": "! npm ls statuses | grep -q 'statuses@2.0.2'",
-    "windowsCheckCommand": "npm ls statuses | findstr /C:\"statuses@2.0.2\" || exit 0",
+    "strictCommandMatch": true,
     "explanation": "Attempts to flatten the dependency tree by hoisting shared packages like 'statuses'."
   },
   {
