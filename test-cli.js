@@ -136,9 +136,25 @@ function cleanup() {
     console.log('\n🧹 Cleaning up test environment...');
     process.chdir(__dirname);
     
-    // Clean up test root directory
+    // Clean up test root directory with retry for Windows file locks
     if (fs.existsSync(testRootDir)) {
-        fs.rmSync(testRootDir, { recursive: true, force: true });
+        let retries = 3;
+        while (retries > 0) {
+            try {
+                fs.rmSync(testRootDir, { recursive: true, force: true });
+                break;
+            } catch (err) {
+                retries--;
+                if (retries === 0) {
+                    console.warn(`⚠️  Could not fully clean up test environment: ${err.message}`);
+                } else {
+                    // Wait a bit before retrying on Windows
+                    const delay = 1000;
+                    const start = Date.now();
+                    while (Date.now() - start < delay) { /* busy wait */ }
+                }
+            }
+        }
     }
 }
 
@@ -196,9 +212,9 @@ async function runTests() {
             continue;
         }
         
-        // Skip browser commands and GUI editors on Linux (no display in Docker containers)
-        if (process.platform === 'linux' && (task.isBrowserCommand || task.requiresDisplay)) {
-            console.log(`⏭️  SKIPPED: Requires display - not available in headless environment`);
+        // Skip browser commands and GUI editors on Linux and Windows Docker (no display/browser in containers)
+        if ((process.platform === 'linux' || isWindows) && (task.isBrowserCommand || task.requiresDisplay)) {
+            console.log(`⏭️  SKIPPED: Requires display/browser - not available in headless environment`);
             skippedCount++;
             continue;
         }
