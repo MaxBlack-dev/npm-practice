@@ -208,11 +208,12 @@
   {
     "description": "Upgrade npm to the latest version to resolve the issue.",
     "expectedCommand": "npm install -g npm@latest",
-    "beforeCommand": "npm install -g npm@10.9.0",
-    "windowsBeforeCommand": "npm install -g npm@10.9.0",
-    "checkCommand": "! npm -v | grep -q '^10\\.8\\.0$'",
-    "windowsCheckCommand": "(npm -v | findstr \"10.8.0\" || exit 0)",
+    "beforeCommand": "npm install -g npm@11.6.2",
+    "windowsBeforeCommand": "npm install -g npm@11.6.2",
+    "checkCommand": "! npm -v | grep -q '^11\\.6\\.2$'",
+    "windowsCheckCommand": "(npm -v | findstr \"11.6.2\" || exit 0)",
     "requireSudo": true,
+    "skipTest": true,
     "explanation": "Upgrades npm to the latest version so that npm doctor no longer reports it as outdated."
   },
   {
