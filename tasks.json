@@ -208,7 +208,9 @@
   {
     "description": "Upgrade npm to the latest version to resolve the issue.",
     "expectedCommand": "npm install -g npm@latest",
-    "checkCommand": "! npm -v | grep -q '^10\\.8\\.0$' && npm doctor | awk '/Checking npm version/{getline; print}' | grep -q '^Ok$'",
+    "beforeCommand": "npm install -g npm@10.9.0",
+    "windowsBeforeCommand": "npm install -g npm@10.9.0",
+    "checkCommand": "! npm -v | grep -q '^10\\.8\\.0$'",
     "windowsCheckCommand": "(npm -v | findstr \"10.8.0\" || exit 0)",
     "requireSudo": true,
     "explanation": "Upgrades npm to the latest version so that npm doctor no longer reports it as outdated."
