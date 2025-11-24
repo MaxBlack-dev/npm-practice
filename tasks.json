@@ -209,6 +209,7 @@
     "description": "Upgrade npm to the latest version to resolve the issue.",
     "expectedCommand": "npm install -g npm@latest",
     "beforeCommand": "npm install -g npm@11.6.2",
+    "beforeRequiresSudo": true,
     "windowsBeforeCommand": "npm install -g npm@11.6.2",
     "checkCommand": "! npm -v | grep -q '^11\\.6\\.2$'",
     "windowsCheckCommand": "(npm -v | findstr \"11.6.2\" || exit 0)",
