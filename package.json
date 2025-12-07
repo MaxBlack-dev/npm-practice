@@ -54,6 +54,14 @@
   ],
   "author": "Max Black",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MaxBlack-dev/npm-practice.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MaxBlack-dev/npm-practice/issues"
+  },
+  "homepage": "https://github.com/MaxBlack-dev/npm-practice#readme",
   "type": "commonjs",
   "bin": {
     "npm-practice": "index.js"
